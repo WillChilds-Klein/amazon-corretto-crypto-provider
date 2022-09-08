@@ -26,6 +26,8 @@
 # This results in a single list with proper behavior on both JDK8 and JDK9+ systems.
 #
 
+# TODO [childw] rewrite above comment??
+
 security.provider.1=com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider
 security.provider.2=sun.security.provider.Sun
 security.provider.3=sun.security.rsa.SunRsaSign
@@ -46,8 +48,7 @@ security.provider.17=JdkSASL
 security.provider.18=sun.security.mscapi.SunMSCAPI
 security.provider.19=SunMSCAPI
 security.provider.20=apple.security.AppleProvider
-security.provider.21=Apple
-security.provider.22=SunPKCS11
+security.provider.21=SunPKCS11
 
 #
 # A list of known strong SecureRandom implementations.
