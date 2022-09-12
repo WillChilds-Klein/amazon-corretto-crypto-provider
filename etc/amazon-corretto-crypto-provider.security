@@ -47,8 +47,9 @@ security.provider.16=JdkLDAP
 security.provider.17=JdkSASL
 security.provider.18=sun.security.mscapi.SunMSCAPI
 security.provider.19=SunMSCAPI
-security.provider.20=apple.security.AppleProvider
-security.provider.21=SunPKCS11
+security.provider.20=Apple
+security.provider.21=apple.security.AppleProvider
+security.provider.22=SunPKCS11
 
 #
 # A list of known strong SecureRandom implementations.
