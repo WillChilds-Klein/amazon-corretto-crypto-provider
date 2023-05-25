@@ -15,7 +15,7 @@ public class Drbg {
   @Param({"1024"})
   public int size;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SUN"})
+  @Param({"BCFIPS"})
   public String provider;
 
   private byte[] data;
@@ -29,6 +29,7 @@ public class Drbg {
     switch (provider) {
       case AmazonCorrettoCryptoProvider.PROVIDER_NAME:
       case "BC":
+      case "BCFIPS":
         algorithm = "DEFAULT";
         break;
       case "SUN":
@@ -40,14 +41,12 @@ public class Drbg {
     random = SecureRandom.getInstance(algorithm, provider);
   }
 
-  @Benchmark
   @Threads(1)
   public byte[] singleThreaded() {
     random.nextBytes(data);
     return data;
   }
 
-  @Benchmark
   @Threads(Threads.MAX)
   public byte[] multiThreaded() {
     random.nextBytes(data);

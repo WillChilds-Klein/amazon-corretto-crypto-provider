@@ -9,14 +9,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 class BenchmarkUtils {
   private BenchmarkUtils() {}
 
   private static final SecureRandom sr = new SecureRandom();
   private static final Set<String> NON_DEFAULT_PROVIDERS =
-      new HashSet(Arrays.asList("BC", "BCFIPS", "AmazonCorrettoCryptoProvider"));
+      new HashSet(Arrays.asList("BCFIPS", "AmazonCorrettoCryptoProvider"));
   private static final Provider[] DEFAULT_PROVIDERS;
 
   static {
@@ -46,9 +45,6 @@ class BenchmarkUtils {
         installDefaultProviders();
         AmazonCorrettoCryptoProvider.install();
         AmazonCorrettoCryptoProvider.INSTANCE.assertHealthy();
-        break;
-      case "BC":
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
         break;
       case "BCFIPS":
         Security.insertProviderAt(new BouncyCastleFipsProvider(), 1);
