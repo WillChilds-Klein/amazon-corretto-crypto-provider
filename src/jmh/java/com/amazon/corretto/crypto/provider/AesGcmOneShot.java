@@ -14,7 +14,7 @@ public class AesGcmOneShot extends AesGcmBase {
   @Param({"128", "256"})
   public int keyBits;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SunJCE"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SunJCE"})
   public String provider;
 
   @Setup

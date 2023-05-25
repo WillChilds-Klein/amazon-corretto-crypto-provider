@@ -8,6 +8,7 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 class BenchmarkUtils {
@@ -48,6 +49,9 @@ class BenchmarkUtils {
         break;
       case "BC":
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        break;
+      case "BCFIPS":
+        Security.insertProviderAt(new BouncyCastleFipsProvider(), 1);
         break;
       case "SUN":
       case "SunEC":

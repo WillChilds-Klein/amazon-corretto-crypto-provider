@@ -17,7 +17,7 @@ public class RsaCipherOneShot {
   @Param({"2048", "4096"})
   public int keyBits;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SunJCE"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SunJCE"})
   public String provider;
 
   @Param({"Pkcs1Padding", "OAEPWithSHA-1AndMGF1Padding"})

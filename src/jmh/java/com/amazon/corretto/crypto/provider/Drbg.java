@@ -15,7 +15,7 @@ public class Drbg {
   @Param({"1024"})
   public int size;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SUN"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SUN"})
   public String provider;
 
   private byte[] data;

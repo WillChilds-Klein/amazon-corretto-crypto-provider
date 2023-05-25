@@ -18,7 +18,7 @@ public class SignatureRsa extends SignatureBase {
   @Param({"2048", "4096"})
   public int bits;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SunRsaSign"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SunRsaSign"})
   public String provider;
 
   @Setup
