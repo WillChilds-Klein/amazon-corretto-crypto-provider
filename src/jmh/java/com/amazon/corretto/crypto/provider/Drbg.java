@@ -15,7 +15,7 @@ public class Drbg {
   @Param({"1024"})
   public int size;
 
-  @Param({"BCFIPS"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SUN"})
   public String provider;
 
   private byte[] data;
@@ -29,7 +29,6 @@ public class Drbg {
     switch (provider) {
       case AmazonCorrettoCryptoProvider.PROVIDER_NAME:
       case "BC":
-      case "BCFIPS":
         algorithm = "DEFAULT";
         break;
       case "SUN":
@@ -38,22 +37,24 @@ public class Drbg {
       default:
         throw new RuntimeException("Unknown algorithm for provider " + provider);
     }
-    random = SecureRandom.getInstance(algorithm, provider);
+    random = SecureRandom.getInstance(algorithm, BenchmarkUtils.getProviderName(provider));
   }
 
+  @Benchmark
   @Threads(1)
   public byte[] singleThreaded() {
     random.nextBytes(data);
     return data;
   }
 
+  // @Benchmark
   @Threads(Threads.MAX)
   public byte[] multiThreaded() {
     random.nextBytes(data);
     return data;
   }
 
-  @Benchmark
+  // @Benchmark
   @Threads(1)
   public byte[] newThreadPerRequest() throws InterruptedException {
     Thread t =

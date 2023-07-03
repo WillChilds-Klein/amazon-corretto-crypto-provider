@@ -14,7 +14,7 @@ public class Hashes {
   @Param({"SHA-256", "SHA-384", "SHA-512"})
   public String algorithm;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SUN"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SUN"})
   public String provider;
 
   private byte[] data_8B;

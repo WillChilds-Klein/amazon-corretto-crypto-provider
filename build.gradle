@@ -26,7 +26,7 @@ if (ext.lcovIgnore == null) {
 
 jmh {
     includes = ['Drbg']
-    fork = 1
+    fork = 0
     benchmarkMode = ['thrpt']
     threads = 1
     timeUnit = 's'
@@ -172,11 +172,11 @@ dependencies {
     // Separate so we can extract the jar for the runner specifically
     testRunner group: 'org.junit.platform', name: 'junit-platform-console-standalone', version: '1.8.2'
 
-    // if (isFips) {
-    jmh 'org.bouncycastle:bc-fips:1.0.2'
-    // } else {
-    //     jmh 'org.bouncycastle:bcprov-debug-jdk15on:1.69'
-    // }
+    if (isFips) {
+        jmh 'org.bouncycastle:bc-fips:1.0.2'
+    } else {
+        jmh 'org.bouncycastle:bcprov-debug-jdk15on:1.69'
+    }
 
     testDep 'org.apiguardian:apiguardian-api:1.1.2'
     testDep 'org.junit.jupiter:junit-jupiter:5.8.2'
@@ -305,7 +305,7 @@ task executeCmake(type: Exec) {
     args "-DTEST_RUNNER_JAR=${configurations.testRunner.singleFile}"
     args "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     if (isFips) {
-        args "-DFIPS=ON"
+        args "-DFIPS=1"
     }
 
     if (prebuiltJar != null) {
@@ -514,7 +514,7 @@ task coverage_cmake(type: Exec) {
     args "-DTEST_RUNNER_JAR=${configurations.testRunner.singleFile}"
     args "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     if (isFips) {
-        args "-DFIPS=ON"
+        args "-DFIPS=1"
     }
 
     if (System.properties['JAVA_HOME'] != null) {

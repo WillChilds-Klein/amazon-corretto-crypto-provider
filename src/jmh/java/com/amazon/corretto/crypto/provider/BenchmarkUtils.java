@@ -8,18 +8,18 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 
 class BenchmarkUtils {
   private BenchmarkUtils() {}
 
   private static final SecureRandom sr = new SecureRandom();
+  static final String BC_PROVIDER_NAME =
+      AmazonCorrettoCryptoProvider.INSTANCE.isFips() ? "BCFIPS" : "BC";
+  private static final Provider[] DEFAULT_PROVIDERS = Security.getProviders();
   private static final Set<String> NON_DEFAULT_PROVIDERS =
-      new HashSet(Arrays.asList("BCFIPS", "AmazonCorrettoCryptoProvider"));
-  private static final Provider[] DEFAULT_PROVIDERS;
+      new HashSet(Arrays.asList("BC", "BCFIPS", "AmazonCorrettoCryptoProvider"));
 
   static {
-    DEFAULT_PROVIDERS = Security.getProviders();
     for (Provider provider : DEFAULT_PROVIDERS) {
       if (NON_DEFAULT_PROVIDERS.contains(provider.getName())) {
         throw new RuntimeException("Provider prematurely (statically) registered: " + provider);
@@ -40,14 +40,34 @@ class BenchmarkUtils {
 
   static void setupProvider(String providerName) {
     removeAllProviders();
+    final Provider bcProvider;
+    try {
+      bcProvider =
+          (Provider)
+              Class.forName(
+                      AmazonCorrettoCryptoProvider.INSTANCE.isFips()
+                          // ? "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider"
+                          // : "org.bouncycastle.jce.provider.BouncyCastleProvider")
+                          ? "org.bouncycastle.jce.provider.BouncyCastleProvider"
+                          : "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider")
+                  .getConstructor()
+                  .newInstance();
+    } catch (Throwable t) {
+      throw new RuntimeException(t);
+    }
+
     switch (providerName) {
       case "AmazonCorrettoCryptoProvider":
         installDefaultProviders();
         AmazonCorrettoCryptoProvider.install();
         AmazonCorrettoCryptoProvider.INSTANCE.assertHealthy();
+        if (!AmazonCorrettoCryptoProvider.INSTANCE.isFips()) {
+          throw new RuntimeException("ACCP is not in FIPS mode");
+        }
         break;
+      case "BC":
       case "BCFIPS":
-        Security.insertProviderAt(new BouncyCastleFipsProvider(), 1);
+        Security.insertProviderAt(bcProvider, 1);
         break;
       case "SUN":
       case "SunEC":
@@ -57,6 +77,17 @@ class BenchmarkUtils {
         break;
       default:
         throw new RuntimeException("Unrecognized provider: " + providerName);
+    }
+  }
+
+  static String getProviderName(String providerName) {
+    switch (providerName) {
+      case "BC":
+      case "BCFIPS":
+        // return AmazonCorrettoCryptoProvider.INSTANCE.isFips() ? "BCFIPS" : "BC";
+        return "BCFIPS";
+      default:
+        return providerName;
     }
   }
 

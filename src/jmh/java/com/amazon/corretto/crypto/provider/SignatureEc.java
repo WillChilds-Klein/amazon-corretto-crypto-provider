@@ -17,7 +17,7 @@ public class SignatureEc extends SignatureBase {
   @Param({"secp256r1", "secp384r1", "secp521r1"})
   public String curve;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SunEC"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SunEC"})
   public String provider;
 
   @Setup

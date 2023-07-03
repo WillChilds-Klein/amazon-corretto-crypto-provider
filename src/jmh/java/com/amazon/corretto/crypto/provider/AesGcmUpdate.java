@@ -17,7 +17,7 @@ public class AesGcmUpdate extends AesGcmBase {
   @Param({"16", "256"})
   public int chunkSize;
 
-  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "BCFIPS", "SunJCE"})
+  @Param({AmazonCorrettoCryptoProvider.PROVIDER_NAME, "BC", "SunJCE"})
   public String provider;
 
   @Setup
