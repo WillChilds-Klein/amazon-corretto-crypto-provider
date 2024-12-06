@@ -18,7 +18,8 @@ import java.util.Map;
 enum EvpKeyType {
   RSA("RSA", 6, RSAPublicKey.class, RSAPrivateKey.class),
   EC("EC", 408, ECPublicKey.class, ECPrivateKey.class),
-  EdDSA("EdDSA", 949, PublicKey.class, PrivateKey.class);
+  EdDSA("EdDSA", 949, PublicKey.class, PrivateKey.class),
+  MlDsa("ML-DSA", -1, PublicKey.class, PrivateKey.class);
 
   final String jceName;
   final int nativeValue;
