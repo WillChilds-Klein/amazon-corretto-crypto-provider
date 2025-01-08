@@ -8,10 +8,10 @@
 #include <jni.h>
 
 // ML-DSA constants
-#define EVP_PKEY_PQDSA EVP_PKEY_ED448 // Temporarily using ED448's ID
-#define NID_MLDSA44    1087
-#define NID_MLDSA65    1088
-#define NID_MLDSA87    1089
+#define EVP_PKEY_PQDSA NID_PQDSA
+#define NID_MLDSA44    994
+#define NID_MLDSA65    995
+#define NID_MLDSA87    996
 
 // Function declarations
 int EVP_PKEY_CTX_pqdsa_set_params(EVP_PKEY_CTX* ctx, int nid);

@@ -220,6 +220,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     }
 
     // Add ML-DSA signature services
+    addService("Signature", "ML-DSA", "MLDSASignature");
     addService("Signature", "ML-DSA-44", "EvpSignatureMlDsa$Level2");
     addService("Signature", "ML-DSA-65", "EvpSignatureMlDsa$Level3");
     addService("Signature", "ML-DSA-87", "EvpSignatureMlDsa$Level5");

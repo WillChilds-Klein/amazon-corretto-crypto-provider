@@ -9,6 +9,7 @@ final class MLDSASignature extends SignatureSpi {
   private final long ctx;
   private State state = State.UNINITIALIZED;
   private byte[] precomputedHash;
+  private String algorithmName;
 
   private enum State {
     UNINITIALIZED,
@@ -150,6 +151,10 @@ final class MLDSASignature extends SignatureSpi {
   private static native byte[] nativeSign(long ctx);
 
   private static native boolean nativeVerify(long ctx, byte[] signature);
+
+  public void setAlgorithmName(String name) {
+    this.algorithmName = name;
+  }
 
   static {
     Loader.load();
