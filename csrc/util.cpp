@@ -64,4 +64,9 @@ EVP_MD const* digest_code_to_EVP_MD(int digestCode)
     }
 }
 
+void throw_openssl_error(JNIEnv* env, const char* message)
+{
+    throw java_ex(EX_RUNTIME_CRYPTO, opensslErrorWithDefault(message));
+}
+
 } // namespace

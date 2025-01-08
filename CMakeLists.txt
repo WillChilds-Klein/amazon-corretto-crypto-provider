@@ -283,6 +283,7 @@ set(C_SRC
     csrc/util.cpp
     csrc/util_class.cpp
     csrc/fips_kat_self_test.cpp
+    csrc/mldsa.cpp
     ${JNI_HEADER_DIR}/generated-headers.h)
 
 if(FIPS)

@@ -129,6 +129,8 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
 
     addService("KeyPairGenerator", "RSA", "RsaGen");
     addService("KeyPairGenerator", "EC", "EcGen");
+    addService("KeyPairGenerator", "ML-DSA", "MLDSAKeyPairGenerator");
+    addService("KeyFactory", "ML-DSA", "MLDSAKeyFactory");
 
     addService("KeyGenerator", "AES", "keygeneratorspi.SecretKeyGenerator", false);
 
@@ -216,6 +218,11 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       addService("Signature", "EdDSA", "EvpSignatureRaw$Ed25519");
       addService("Signature", "Ed25519", "EvpSignatureRaw$Ed25519");
     }
+
+    // Add ML-DSA signature services
+    addService("Signature", "ML-DSA-44", "EvpSignatureMlDsa$Level2");
+    addService("Signature", "ML-DSA-65", "EvpSignatureMlDsa$Level3");
+    addService("Signature", "ML-DSA-87", "EvpSignatureMlDsa$Level5");
   }
 
   private ACCPService addService(

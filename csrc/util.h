@@ -31,6 +31,8 @@ inline std::string opensslErrorWithDefault(const char* fallback)
     return formatOpensslError(drainOpensslErrors(), fallback);
 }
 
+void throw_openssl_error(JNIEnv* env, const char* message);
+
 #define EX_CLASSNOTFOUND       "java/lang/NoClassDefFoundError"
 #define EX_ERROR               "java/lang/Error"
 #define EX_OOM                 "java/lang/OutOfMemoryError"
