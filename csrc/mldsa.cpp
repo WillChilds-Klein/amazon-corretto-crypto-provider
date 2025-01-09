@@ -4,19 +4,13 @@
 #include "env.h"
 #include "keyutils.h"
 #include "util.h"
+#include "auto_free.h"
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
 using namespace AmazonCorrettoCryptoProvider;
-
-// Temporary implementation of EVP_PKEY_CTX_pqdsa_set_params
-int EVP_PKEY_CTX_pqdsa_set_params(EVP_PKEY_CTX* ctx, int nid)
-{
-    // For now, just return success
-    return 1;
-}
 
 extern "C" {
 
@@ -36,55 +30,123 @@ struct MLDSAContext {
 JNIEXPORT jobjectArray JNICALL Java_com_amazon_corretto_crypto_provider_MLDSAKeyPairGenerator_nativeGenerateKeyPair(
     JNIEnv* env, jclass clazz, jint level)
 {
-    EVP_PKEY_CTX* ctx = nullptr;
-    EVP_PKEY* pkey = nullptr;
     jobjectArray result = nullptr;
 
     try {
-        // Mock key generation for testing
-        // In a real implementation, this would use actual ML-DSA key generation
-        int pub_len = 32;  // Mock public key length
-        int priv_len = 64; // Mock private key length
-
-        unsigned char* pub_buf = new unsigned char[pub_len];
-        unsigned char* priv_buf = new unsigned char[priv_len];
-
-        // Fill with mock data
-        for (int i = 0; i < pub_len; i++) {
-            pub_buf[i] = i;
-        }
-        for (int i = 0; i < priv_len; i++) {
-            priv_buf[i] = i + 100;
+        // Validate ML-DSA level
+        switch (level) {
+        case 2:
+        case 3:
+        case 5:
+            break;
+        default:
+            throw_openssl_error(env, "Invalid ML-DSA security level");
+            return nullptr;
         }
 
-        // Create result array of 2 byte arrays
-        jclass byteArrayClass = env->FindClass("[B");
-        result = env->NewObjectArray(2, byteArrayClass, nullptr);
+        // Generate ML-DSA key pair
 
-        // Create and set public key byte array
+        // Set the ML-DSA parameters based on the level
+        int nid;
+        switch (level) {
+        case 2:
+            nid = NID_MLDSA44;
+            break;
+        case 3:
+            nid = NID_MLDSA65;
+            break;
+        case 5:
+            nid = NID_MLDSA87;
+            break;
+        default:
+            throw_openssl_error(nullptr, "Invalid ML-DSA security level");
+            return nullptr;
+        }
+
+        // Initialize CBB objects for marshaling
+        CBB pub_cbb, priv_cbb;
+        if (!CBB_init(&pub_cbb, 0) || !CBB_init(&priv_cbb, 0)) {
+            throw_openssl_error(env, "Failed to initialize CBB");
+            return nullptr;
+        }
+
+        // Create the context for key generation
+        EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_PQDSA, nullptr);
+        EVP_PKEY *key = nullptr;
+        if (EVP_PKEY_CTX_pqdsa_set_params(ctx, nid) != 1 ||
+            EVP_PKEY_keygen_init(ctx) != 1 ||
+            EVP_PKEY_keygen(ctx, &key) != 1) {
+            throw_openssl_error(env, "Failed init keygen and gen key");
+            return nullptr;
+        }
+
+        // Marshal the keys
+        if (!EVP_marshal_public_key(&pub_cbb, key) || !EVP_marshal_private_key(&priv_cbb, key)) {
+            CBB_cleanup(&pub_cbb);
+            CBB_cleanup(&priv_cbb);
+            EVP_PKEY_CTX_free(ctx);
+            EVP_PKEY_free(key);
+            throw_openssl_error(env, "Failed to marshal ML-DSA keys");
+            return nullptr;
+        }
+
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key);
+
+        // Marshaled the keys
+        uint8_t *pub_buf = NULL, *priv_buf = NULL;
+        size_t pub_len = 0, priv_len = 0;
+        if (!CBB_finish(&pub_cbb, &pub_buf, &pub_len) || !CBB_finish(&priv_cbb, &priv_buf, &priv_len)) {
+            CBB_cleanup(&pub_cbb);
+            CBB_cleanup(&priv_cbb);
+            OPENSSL_free(pub_buf);
+            OPENSSL_free(priv_buf);
+            throw_openssl_error(env, "Failed to finish CBB");
+            return nullptr;
+        }
+
         jbyteArray pubArray = env->NewByteArray(pub_len);
-        env->SetByteArrayRegion(pubArray, 0, pub_len, (jbyte*)pub_buf);
-        env->SetObjectArrayElement(result, 0, pubArray);
-
-        // Create and set private key byte array
         jbyteArray privArray = env->NewByteArray(priv_len);
+        if (!pubArray || !privArray) {
+            OPENSSL_free(pub_buf);
+            OPENSSL_free(priv_buf);
+            throw_openssl_error(env, "Failed to create byte arrays");
+            return nullptr;
+        }
+
+        // Create result array
+        jclass byteArrayClass = env->FindClass("[B");
+        if (!byteArrayClass) {
+            OPENSSL_free(pub_buf);
+            OPENSSL_free(priv_buf);
+            throw_openssl_error(env, "Failed to find byte array class");
+            return nullptr;
+        }
+        result = env->NewObjectArray(2, byteArrayClass, nullptr);
+        if (!result) {
+            OPENSSL_free(pub_buf);
+            OPENSSL_free(priv_buf);
+            throw_openssl_error(env, "Failed to create result array");
+            return nullptr;
+        }
+
+        // Copy marshaled keys
+        env->SetByteArrayRegion(pubArray, 0, pub_len, (jbyte*)pub_buf);
         env->SetByteArrayRegion(privArray, 0, priv_len, (jbyte*)priv_buf);
+
+        OPENSSL_free(pub_buf);
+        OPENSSL_free(priv_buf);
+
+        env->SetObjectArrayElement(result, 0, pubArray);
         env->SetObjectArrayElement(result, 1, privArray);
-
-        delete[] pub_buf;
-        delete[] priv_buf;
-
-    } catch (...) {
+    } catch (java_ex& ex) {
         if (result) {
             env->DeleteLocalRef(result);
             result = nullptr;
         }
+        ex.throw_to_java(env);
     }
 
-    if (ctx)
-        EVP_PKEY_CTX_free(ctx);
-    if (pkey)
-        EVP_PKEY_free(pkey);
     return result;
 }
 
@@ -141,9 +203,17 @@ JNIEXPORT jboolean JNICALL Java_com_amazon_corretto_crypto_provider_MLDSASignatu
         return JNI_FALSE;
     }
 
-    // Store the key for later use
+    // Convert private key from DER format
     jbyte* key_bytes = env->GetByteArrayElements(privkey, nullptr);
+    jsize key_len = env->GetArrayLength(privkey);
+    const unsigned char* key_buf = reinterpret_cast<const unsigned char*>(key_bytes + 1);  // Skip level byte
+    EVP_PKEY_auto pkey = EVP_PKEY_auto::from(d2i_PrivateKey(EVP_PKEY_PQDSA, nullptr, &key_buf, key_len - 1));
     env->ReleaseByteArrayElements(privkey, key_bytes, JNI_ABORT);
+
+    CHECK_OPENSSL(pkey.isInitialized());
+
+    // Initialize signing operation
+    CHECK_OPENSSL(EVP_DigestSignInit(ctx->md_ctx, &ctx->ctx, nullptr, nullptr, pkey) == 1);
     ctx->level = level;
     ctx->is_signing = true;
     ctx->message.clear();
@@ -163,9 +233,17 @@ JNIEXPORT jboolean JNICALL Java_com_amazon_corretto_crypto_provider_MLDSASignatu
         return JNI_FALSE;
     }
 
-    // Store the key for later use
+    // Convert public key from DER format
     jbyte* key_bytes = env->GetByteArrayElements(pubkey, nullptr);
+    jsize key_len = env->GetArrayLength(pubkey);
+    const unsigned char* key_buf = reinterpret_cast<const unsigned char*>(key_bytes + 1);  // Skip level byte
+    EVP_PKEY_auto pkey = EVP_PKEY_auto::from(d2i_PUBKEY(nullptr, &key_buf, key_len - 1));
     env->ReleaseByteArrayElements(pubkey, key_bytes, JNI_ABORT);
+
+    CHECK_OPENSSL(pkey.isInitialized());
+
+    // Initialize verification operation
+    CHECK_OPENSSL(EVP_DigestVerifyInit(ctx->md_ctx, &ctx->ctx, nullptr, nullptr, pkey) == 1);
     ctx->level = level;
     ctx->is_signing = false;
     ctx->message.clear();
@@ -191,10 +269,20 @@ JNIEXPORT jboolean JNICALL Java_com_amazon_corretto_crypto_provider_MLDSASignatu
         return JNI_FALSE;
     }
 
-    // Get the data and append to message
+    // Get the data and update the digest
     jbyte* data_bytes = env->GetByteArrayElements(data, nullptr);
-    ctx->message.insert(ctx->message.end(), data_bytes + offset, data_bytes + offset + length);
+    int result;
+    if (ctx->is_signing) {
+        result = EVP_DigestSignUpdate(ctx->md_ctx, data_bytes + offset, length);
+    } else {
+        result = EVP_DigestVerifyUpdate(ctx->md_ctx, data_bytes + offset, length);
+    }
     env->ReleaseByteArrayElements(data, data_bytes, JNI_ABORT);
+
+    if (result <= 0) {
+        throw_openssl_error(env, "Failed to update ML-DSA operation");
+        return JNI_FALSE;
+    }
     return JNI_TRUE;
 }
 
@@ -211,19 +299,20 @@ JNIEXPORT jbyteArray JNICALL Java_com_amazon_corretto_crypto_provider_MLDSASigna
         return nullptr;
     }
 
-    // Generate a signature based on the message
-    size_t sig_len = 64;  // Fixed signature length
-    unsigned char* sig_buf = new unsigned char[sig_len];
-    
-    // Simple hash-based signature
-    for (size_t i = 0; i < sig_len; i++) {
-        unsigned char hash = 0;
-        for (size_t j = 0; j < ctx->message.size(); j++) {
-            hash ^= ctx->message[j];
-        }
-        sig_buf[i] = hash + i;  // Make each byte unique
+    // First call to get signature length
+    size_t sig_len;
+    if (EVP_DigestSignFinal(ctx->md_ctx, nullptr, &sig_len) <= 0) {
+        throw_openssl_error(env, "Failed to determine ML-DSA signature length");
+        return nullptr;
     }
-    ctx->message.clear();
+
+    // Allocate buffer and generate signature
+    unsigned char* sig_buf = new unsigned char[sig_len];
+    if (EVP_DigestSignFinal(ctx->md_ctx, sig_buf, &sig_len) <= 0) {
+        delete[] sig_buf;
+        throw_openssl_error(env, "Failed to generate ML-DSA signature");
+        return nullptr;
+    }
 
     // Convert to Java byte array
     jbyteArray result = env->NewByteArray(sig_len);
@@ -249,21 +338,17 @@ JNIEXPORT jboolean JNICALL Java_com_amazon_corretto_crypto_provider_MLDSASignatu
     jbyte* sig_bytes = env->GetByteArrayElements(signature, nullptr);
     jsize sig_len = env->GetArrayLength(signature);
 
-    // Generate expected signature from current message
-    unsigned char* expected_sig = new unsigned char[sig_len];
-    for (jsize i = 0; i < sig_len; i++) {
-        unsigned char hash = 0;
-        for (size_t j = 0; j < ctx->message.size(); j++) {
-            hash ^= ctx->message[j];
-        }
-        expected_sig[i] = hash + i;
-    }
-    ctx->message.clear();
+    // Verify the signature
+    int result = EVP_DigestVerifyFinal(ctx->md_ctx, reinterpret_cast<unsigned char*>(sig_bytes), sig_len);
 
-    bool matches = memcmp(sig_bytes, expected_sig, sig_len) == 0;
-    delete[] expected_sig;
     env->ReleaseByteArrayElements(signature, sig_bytes, JNI_ABORT);
-    return matches ? JNI_TRUE : JNI_FALSE;
+
+    if (result < 0) {
+        throw_openssl_error(env, "ML-DSA verification failed");
+        return JNI_FALSE;
+    }
+
+    return result == 1 ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

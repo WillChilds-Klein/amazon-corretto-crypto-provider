@@ -6,9 +6,6 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <jni.h>
-
-// ML-DSA constants
-#define EVP_PKEY_PQDSA NID_PQDSA
 #define NID_MLDSA44    994
 #define NID_MLDSA65    995
 #define NID_MLDSA87    996
