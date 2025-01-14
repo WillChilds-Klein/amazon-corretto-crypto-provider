@@ -225,49 +225,124 @@ JNIEXPORT jint JNICALL Java_com_amazon_corretto_crypto_provider_MLDSAKeyFactory_
         }
 
         // Get the key parameters
-        EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(pkey, nullptr);
-        if (!ctx) {
+        const unsigned char* p = key_data;
+        const unsigned char* end = p + key_len;
+
+        // Skip the SEQUENCE header
+        int tag, xclass;
+        long len;
+        if (ASN1_get_object(&p, &len, &tag, &xclass, end - p) != V_ASN1_CONSTRUCTED ||
+            tag != V_ASN1_SEQUENCE) {
             EVP_PKEY_free(pkey);
-            throw_openssl("Failed to create key context");
+            throw_openssl("Invalid key format");
             return 0;
         }
 
-        // Initialize the key context for parameter operations
-        if (EVP_PKEY_paramgen_init(ctx) != 1) {
-            EVP_PKEY_CTX_free(ctx);
+        // Skip the BIT STRING header
+        if (ASN1_get_object(&p, &len, &tag, &xclass, end - p) != V_ASN1_CONSTRUCTED ||
+            tag != V_ASN1_SEQUENCE) {
             EVP_PKEY_free(pkey);
-            throw_openssl("Failed to initialize key context");
+            throw_openssl("Invalid key format");
             return 0;
         }
 
-        // Get the key parameters
-        EVP_PKEY* params = nullptr;
-        if (EVP_PKEY_paramgen(ctx, &params) != 1) {
-            EVP_PKEY_CTX_free(ctx);
+        // Get the OID
+        ASN1_OBJECT* obj = nullptr;
+        if (d2i_ASN1_OBJECT(&obj, &p, len) == nullptr) {
             EVP_PKEY_free(pkey);
-            throw_openssl("Failed to get key parameters");
+            throw_openssl("Invalid key format");
             return 0;
         }
 
-        // Get the NID from the parameters
-        int nid = EVP_PKEY_base_id(params);
+        // Get the NID from the OID and try to get the level from it
+        int level = 0;
+        char oid_buf[256];
+        OBJ_obj2txt(oid_buf, sizeof(oid_buf), obj, 1);
+        if (strstr(oid_buf, "1.3.6.1.4.1.2.267.12.4.4") != nullptr) {
+            level = 2;
+        } else if (strstr(oid_buf, "1.3.6.1.4.1.2.267.12.6.5") != nullptr) {
+            level = 3;
+        } else if (strstr(oid_buf, "1.3.6.1.4.1.2.267.12.8.7") != nullptr) {
+            level = 5;
+        }
+        ASN1_OBJECT_free(obj);
 
-        EVP_PKEY_free(params);
-        EVP_PKEY_CTX_free(ctx);
+        // If we couldn't get the level from the OID, try to get it from the key parameters
+        if (level == 0) {
+            // Skip the NULL parameter
+            if (ASN1_get_object(&p, &len, &tag, &xclass, end - p) < 0 ||
+                tag != V_ASN1_NULL) {
+                EVP_PKEY_free(pkey);
+                throw_openssl("Invalid key format");
+                return 0;
+            }
+
+            // Skip the BIT STRING header
+            if (ASN1_get_object(&p, &len, &tag, &xclass, end - p) < 0 ||
+                tag != V_ASN1_BIT_STRING) {
+                EVP_PKEY_free(pkey);
+                throw_openssl("Invalid key format");
+                return 0;
+            }
+
+            // Skip the unused bits byte
+            if (p >= end) {
+                EVP_PKEY_free(pkey);
+                throw_openssl("Invalid key format");
+                return 0;
+            }
+            p++;
+
+            // Try to determine the level from the key size
+            size_t key_size = end - p;
+            if (key_size >= 1312 && key_size <= 1312 + 64) {
+                level = 2;
+            } else if (key_size >= 2336 && key_size <= 2336 + 64) {
+                level = 3;
+            } else if (key_size >= 3616 && key_size <= 3616 + 64) {
+                level = 5;
+            }
+
+            // If we still couldn't determine the level, try to get it from the key type
+            if (level == 0) {
+                int key_type = EVP_PKEY_id(pkey);
+                switch (key_type) {
+                case NID_MLDSA44:
+                    level = 2;
+                    break;
+                case NID_MLDSA65:
+                    level = 3;
+                    break;
+                case NID_MLDSA87:
+                    level = 5;
+                    break;
+                }
+            }
+
+            // If we still couldn't determine the level, try to get it from the key parameters
+            if (level == 0) {
+                EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(pkey, nullptr);
+                if (ctx) {
+                    if (EVP_PKEY_paramgen_init(ctx) == 1) {
+                        if (EVP_PKEY_CTX_pqdsa_set_params(ctx, NID_MLDSA44) == 1) {
+                            level = 2;
+                        } else if (EVP_PKEY_CTX_pqdsa_set_params(ctx, NID_MLDSA65) == 1) {
+                            level = 3;
+                        } else if (EVP_PKEY_CTX_pqdsa_set_params(ctx, NID_MLDSA87) == 1) {
+                            level = 5;
+                        }
+                    }
+                    EVP_PKEY_CTX_free(ctx);
+                }
+            }
+        }
+
         EVP_PKEY_free(pkey);
 
-        // Convert NID to level
-        switch (nid) {
-        case NID_MLDSA44:
-            return 2;
-        case NID_MLDSA65:
-            return 3;
-        case NID_MLDSA87:
-            return 5;
-        default:
+        if (level == 0) {
             throw_openssl("Invalid ML-DSA level");
-            return 0;
         }
+        return level;
     } catch (java_ex& ex) {
         ex.throw_to_java(env);
         return 0;
