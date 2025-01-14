@@ -130,7 +130,11 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     addService("KeyPairGenerator", "RSA", "RsaGen");
     addService("KeyPairGenerator", "EC", "EcGen");
     addService("KeyPairGenerator", "ML-DSA", "MLDSAKeyPairGenerator");
-    addService("KeyFactory", "ML-DSA", "MLDSAKeyFactory");
+    addService("KeyFactory", "ML-DSA", "MLDSAKeyFactory", singletonMap("SupportedKeyClasses", "com.amazon.corretto.crypto.provider.MLDSAPublicKey|com.amazon.corretto.crypto.provider.MLDSAPrivateKey"));
+    addService("Signature", "ML-DSA", "MLDSASignature");
+    addService("Signature", "ML-DSA-44", "EvpSignatureMlDsa$Level2");
+    addService("Signature", "ML-DSA-65", "EvpSignatureMlDsa$Level3");
+    addService("Signature", "ML-DSA-87", "EvpSignatureMlDsa$Level5");
 
     addService("KeyGenerator", "AES", "keygeneratorspi.SecretKeyGenerator", false);
 

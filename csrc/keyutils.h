@@ -15,6 +15,13 @@
 
 namespace AmazonCorrettoCryptoProvider {
 
+enum class EvpKeyType {
+    RSA,
+    EC,
+    ED25519,
+    PQDSA
+};
+
 // This class should generally not be used for new development
 // as it has been replaced by the *_auto classes in auto_free.h
 // The only time this class should be used is when you *need* to keep various EVP objects together.

@@ -128,6 +128,10 @@ bool checkKey(const EVP_PKEY* key)
     const EC_KEY* ecKey;
 
     switch (keyType) {
+    case EVP_PKEY_PQDSA:
+        // ML-DSA keys don't need additional validation
+        result = true;
+        break;
     case EVP_PKEY_RSA:
         rsaKey = EVP_PKEY_get0_RSA(key);
         RSA_get0_factors(rsaKey, &p, &q);

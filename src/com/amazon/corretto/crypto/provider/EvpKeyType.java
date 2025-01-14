@@ -14,12 +14,14 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.amazon.corretto.crypto.provider.EvpKey.InternalKey;
+
 /** Corresponds to native constants in OpenSSL which represent keytypes. */
 enum EvpKeyType {
   RSA("RSA", 6, RSAPublicKey.class, RSAPrivateKey.class),
   EC("EC", 408, ECPublicKey.class, ECPrivateKey.class),
   EdDSA("EdDSA", 949, PublicKey.class, PrivateKey.class),
-  MlDsa("ML-DSA", -1, PublicKey.class, PrivateKey.class);
+  MlDsa("ML-DSA", 994, MLDSAPublicKey.class, MLDSAPrivateKey.class);
 
   final String jceName;
   final int nativeValue;
@@ -59,6 +61,9 @@ enum EvpKeyType {
         return new EvpEcPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       case EdDSA:
         return new EvpEdPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
+      case MlDsa:
+        int level = MLDSAKeyFactory.extractLevel(der.getEncoded());
+        return new MLDSAPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue), level);
       default:
         throw new AssertionError("Unsupported key type");
     }
@@ -74,6 +79,9 @@ enum EvpKeyType {
         return new EvpEcPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       case EdDSA:
         return new EvpEdPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
+      case MlDsa:
+        int level = MLDSAKeyFactory.extractLevel(der.getEncoded());
+        return new MLDSAPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue), level);
       default:
         throw new AssertionError("Unsupported key type");
     }

@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.crypto.provider;
 
-import java.security.*;
+import java.security.KeyPair;
+import java.security.KeyPairGeneratorSpi;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
+import java.security.InvalidAlgorithmParameterException;
 
 final class MLDSAKeyPairGenerator extends KeyPairGeneratorSpi {
   private boolean initialized = false;
@@ -41,17 +43,13 @@ final class MLDSAKeyPairGenerator extends KeyPairGeneratorSpi {
       initialized = true;
     }
 
-    try {
-      // Call native method to generate key pair
-      byte[][] keyPair = nativeGenerateKeyPair(level);
-      return new KeyPair(
-          new MLDSAPublicKey(keyPair[0], level), new MLDSAPrivateKey(keyPair[1], level));
-    } catch (InvalidKeySpecException e) {
-      throw new ProviderException("Failed to generate ML-DSA key pair", e);
-    }
+    // Call native method to generate key pair
+    long[] keyPair = nativeGenerateKeyPair(level);
+    return new KeyPair(
+        new MLDSAPublicKey(keyPair[0], level), new MLDSAPrivateKey(keyPair[1], level));
   }
 
-  private static native byte[][] nativeGenerateKeyPair(int level);
+  private static native long[] nativeGenerateKeyPair(int level);
 
   static {
     Loader.load();

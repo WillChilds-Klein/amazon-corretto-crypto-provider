@@ -30,7 +30,7 @@ class EvpSignatureMlDsa extends EvpSignatureBase {
   private final AccessibleByteArrayOutputStream buffer =
       new AccessibleByteArrayOutputStream(64, 1024 * 1024);
 
-  private EvpSignatureMlDsa(AmazonCorrettoCryptoProvider provider, int level) {
+  protected EvpSignatureMlDsa(AmazonCorrettoCryptoProvider provider, int level) {
     super(provider, EvpKeyType.MlDsa, 0, 0);
     this.level = level;
   }
@@ -46,16 +46,16 @@ class EvpSignatureMlDsa extends EvpSignatureBase {
 
   @Override
   protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
-    if (!(publicKey instanceof EvpMlDsaPublicKey)) {
-      throw new InvalidKeyException("Key must be an instance of EvpMlDsaPublicKey");
+    if (!(publicKey instanceof MLDSAPublicKey)) {
+      throw new InvalidKeyException("Key must be an instance of MLDSAPublicKey");
     }
     super.engineInitVerify(publicKey);
   }
 
   @Override
   protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
-    if (!(privateKey instanceof EvpMlDsaPrivateKey)) {
-      throw new InvalidKeyException("Key must be an instance of EvpMlDsaPrivateKey");
+    if (!(privateKey instanceof MLDSAPrivateKey)) {
+      throw new InvalidKeyException("Key must be an instance of MLDSAPrivateKey");
     }
     super.engineInitSign(privateKey);
   }
