@@ -106,6 +106,9 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       addService("KeyPairGenerator", "Ed25519", "EdGen");
     }
 
+    addService("KeyFactory", "ML-DSA", "EvpKeyFactory$MlDsa");
+    addService("KeyPairGenerator", "ML-DSA", "MlDsaGen");
+
     final String hkdfSpi = "HkdfSecretKeyFactorySpi";
     addService("SecretKeyFactory", HKDF_WITH_SHA1, hkdfSpi, false);
     addService("SecretKeyFactory", HKDF_WITH_SHA256, hkdfSpi, false);
@@ -213,6 +216,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       addService("Signature", "EdDSA", "EvpSignatureRaw$Ed25519");
       addService("Signature", "Ed25519", "EvpSignatureRaw$Ed25519");
     }
+    addService("Signature", "ML-DSA", "EvpSignatureRaw$MlDsa");
   }
 
   private ACCPService addService(
@@ -714,6 +718,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
   private transient volatile KeyFactory rsaFactory;
   private transient volatile KeyFactory ecFactory;
   private transient volatile KeyFactory edFactory;
+  private transient volatile KeyFactory mlDsaFactory;
 
   KeyFactory getKeyFactory(EvpKeyType keyType) {
     try {
@@ -733,6 +738,12 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
             edFactory = new EdKeyFactory(this);
           }
           return edFactory;
+        case MlDSA:
+          if (mlDsaFactory == null) {
+            mlDsaFactory = KeyFactory.getInstance(keyType.jceName, this);
+          }
+          return mlDsaFactory;
+
         default:
           throw new AssertionError("Unsupported key type");
       }
