@@ -21,7 +21,7 @@ if (ext.isExperimentalFips) {
     ext.isFips = Boolean.getBoolean('FIPS')
 }
 
-ext.awsLcGitVersionId = 'cee1db1b777a856f34c95d29bff4797b65cfaa6d'
+ext.awsLcGitVersionId = '3263ce2a553e4e917217fb487f8c6f488fcb1866'
 
 // Check for user inputted git version ID.
 if (System.properties["AWSLC_GITVERSION"]) {
