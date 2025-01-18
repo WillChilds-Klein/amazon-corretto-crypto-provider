@@ -61,11 +61,10 @@ enum EvpKeyType {
         return new EvpEcPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       case EdDSA:
         return new EvpEdPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
-        // TODO [childw] uncomment when implementing key factor
-        //      case MlDSA44:
-        //      case MlDSA65:
-        //      case MlDSA87:
-        //        return new EvpMlDsaPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
+      case MlDSA44:
+      case MlDSA65:
+      case MlDSA87:
+        return new EvpMlDsaPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue), this);
       default:
         throw new AssertionError("Unsupported key type");
     }
@@ -81,11 +80,10 @@ enum EvpKeyType {
         return new EvpEcPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       case EdDSA:
         return new EvpEdPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
-        // TODO [childw] uncomment when implementing key factor
-        //      case MlDSA44:
-        //      case MlDSA65:
-        //      case MlDSA87:
-        //        return new EvpMlDsaPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
+      case MlDSA44:
+      case MlDSA65:
+      case MlDSA87:
+        return new EvpMlDsaPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue), this);
       default:
         throw new AssertionError("Unsupported key type");
     }

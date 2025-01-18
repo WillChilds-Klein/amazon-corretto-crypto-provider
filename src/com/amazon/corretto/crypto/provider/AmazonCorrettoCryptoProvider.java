@@ -91,6 +91,9 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
 
     addService("KeyFactory", "RSA", "EvpKeyFactory$RSA");
     addService("KeyFactory", "EC", "EvpKeyFactory$EC");
+    addService("KeyFactory", "ML-DSA-44", "EvpKeyFactory$MlDSA44");
+    addService("KeyFactory", "ML-DSA-65", "EvpKeyFactory$MlDSA65");
+    addService("KeyFactory", "ML-DSA-87", "EvpKeyFactory$MlDSA87");
 
     if (shouldRegisterEdDSA) {
       // KeyFactories are used to convert key encodings to Java Key objects. ACCP's KeyFactory for
@@ -721,7 +724,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
   private transient volatile KeyFactory rsaFactory;
   private transient volatile KeyFactory ecFactory;
   private transient volatile KeyFactory edFactory;
-  //  private transient volatile KeyFactory mlDsaFactory;
+  private transient volatile KeyFactory mlDsaFactory;
 
   KeyFactory getKeyFactory(EvpKeyType keyType) {
     try {
@@ -741,16 +744,15 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
             edFactory = new EdKeyFactory(this);
           }
           return edFactory;
-          //        case MlDSA44:
-          //        case MlDSA65:
-          //        case MlDSA87:
-          //          if (mlDsaFactory == null) {
-          //            mlDsaFactory = KeyFactory.getInstance(keyType.jceName, this);
-          //          }
-          //          return mlDsaFactory;
-
+        case MlDSA44:
+        case MlDSA65:
+        case MlDSA87:
+          if (mlDsaFactory == null) {
+            mlDsaFactory = KeyFactory.getInstance(keyType.jceName, this);
+          }
+          return mlDsaFactory;
         default:
-          throw new AssertionError("Unsupported key type");
+          throw new AssertionError(String.format("Unsupported key type: %s", keyType.jceName));
       }
     } catch (final NoSuchAlgorithmException ex) {
       throw new AssertionError(ex);
