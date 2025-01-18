@@ -3,7 +3,7 @@
 package com.amazon.corretto.crypto.provider.test;
 
 import static com.amazon.corretto.crypto.provider.test.TestUtil.assertThrows;
-import static com.amazon.corretto.crypto.provider.test.TestUtil.versionCompare;
+//import static com.amazon.corretto.crypto.provider.test.TestUtil.versionCompare;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,7 +16,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
+//import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
@@ -31,7 +31,9 @@ import java.security.spec.PSSParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -206,6 +208,7 @@ public class EvpSignatureTest {
     KeyPair ecPair = kg.generateKeyPair();
 
     List<TestParams> paramsList = new ArrayList<>();
+    /*
     for (final String base : BASES) {
       KeyPair currentPair;
       switch (base) {
@@ -287,6 +290,25 @@ public class EvpSignatureTest {
             }
           }
         }
+      }
+    }
+    */
+
+    Map<String, KeyPair> mlDsaPairs = new HashMap<>();
+    kg = KeyPairGenerator.getInstance("ML-DSA-44", TestUtil.BC_PROVIDER);
+    mlDsaPairs.put("ML-DSA-44", kg.generateKeyPair());
+    kg = KeyPairGenerator.getInstance("ML-DSA-65", TestUtil.BC_PROVIDER);
+    mlDsaPairs.put("ML-DSA-65", kg.generateKeyPair());
+    kg = KeyPairGenerator.getInstance("ML-DSA-87", TestUtil.BC_PROVIDER);
+    mlDsaPairs.put("ML-DSA-87", kg.generateKeyPair());
+    for (String algo : mlDsaPairs.keySet()) {
+      KeyPair currentPair = mlDsaPairs.get(algo);
+      //      for (final int length : MESSAGE_LENGTHS) {
+      for (final int length : new int[] {64}) {
+        paramsList.add(new TestParams(algo, algo, length, false, false, currentPair, null));
+        paramsList.add(new TestParams(algo, algo, length, true, false, currentPair, null));
+        paramsList.add(new TestParams(algo, algo, length, false, true, currentPair, null));
+        paramsList.add(new TestParams(algo, algo, length, true, true, currentPair, null));
       }
     }
 

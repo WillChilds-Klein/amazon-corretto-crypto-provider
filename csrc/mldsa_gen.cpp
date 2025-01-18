@@ -7,15 +7,16 @@
 
 using namespace AmazonCorrettoCryptoProvider;
 
-JNIEXPORT jlong JNICALL Java_com_amazon_corretto_crypto_provider_MlDsaGen_generateEvpMlDsaKey(JNIEnv* pEnv, jclass)
+JNIEXPORT jlong JNICALL Java_com_amazon_corretto_crypto_provider_MlDsaGen_generateEvpMlDsaKey(
+    JNIEnv* pEnv, jclass, jint nid)
 {
     try {
         raii_env env(pEnv);
         EVP_PKEY_auto key;
         EVP_PKEY_CTX_auto ctx = EVP_PKEY_CTX_auto::from(EVP_PKEY_CTX_new_id(EVP_PKEY_PQDSA, NULL));
         CHECK_OPENSSL(ctx.isInitialized());
-        CHECK_OPENSSL(EVP_PKEY_CTX_pqdsa_set_params(ctx, NID_MLDSA65));
-        CHECK_OPENSSL(EVP_PKEY_keygen_init(ctx) == 1);
+        CHECK_OPENSSL(EVP_PKEY_CTX_pqdsa_set_params(ctx, nid));
+        CHECK_OPENSSL(EVP_PKEY_keygen_init(ctx));
         CHECK_OPENSSL(EVP_PKEY_keygen(ctx, key.getAddressOfPtr()));
         return reinterpret_cast<jlong>(key.take());
     } catch (java_ex& ex) {

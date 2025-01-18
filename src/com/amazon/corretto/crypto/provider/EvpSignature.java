@@ -547,4 +547,22 @@ class EvpSignature extends EvpSignatureBase {
       super(provider, EvpKeyType.EC, 0, "sha512");
     }
   }
+
+  static final class MlDSA44 extends EvpSignature {
+    MlDSA44(final AmazonCorrettoCryptoProvider provider) {
+      super(provider, EvpKeyType.MlDSA44, 0, null);
+    }
+  }
+
+  static final class MlDSA65 extends EvpSignature {
+    MlDSA65(final AmazonCorrettoCryptoProvider provider) {
+      super(provider, EvpKeyType.MlDSA65, 0, null);
+    }
+  }
+
+  static final class MlDSA87 extends EvpSignature {
+    MlDSA87(final AmazonCorrettoCryptoProvider provider) {
+      super(provider, EvpKeyType.MlDSA87, 0, null);
+    }
+  }
 }

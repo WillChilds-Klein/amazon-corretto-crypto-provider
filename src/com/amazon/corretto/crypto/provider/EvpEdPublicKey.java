@@ -7,10 +7,6 @@ import java.security.PublicKey;
 class EvpEdPublicKey extends EvpEdKey implements PublicKey {
   private static final long serialVersionUID = 1;
 
-  private static native byte[] getPublicKey(long ptr);
-
-  private volatile byte[] publicKey;
-
   EvpEdPublicKey(final long ptr) {
     this(new InternalKey(ptr));
   }

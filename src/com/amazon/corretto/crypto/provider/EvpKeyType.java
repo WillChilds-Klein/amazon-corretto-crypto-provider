@@ -19,7 +19,9 @@ enum EvpKeyType {
   RSA("RSA", 6, RSAPublicKey.class, RSAPrivateKey.class),
   EC("EC", 408, ECPublicKey.class, ECPrivateKey.class),
   EdDSA("EdDSA", 949, PublicKey.class, PrivateKey.class),
-  MlDSA("ML-DSA-65", 994, PublicKey.class, PrivateKey.class);
+  MlDSA44("ML-DSA-44", 994, PublicKey.class, PrivateKey.class),
+  MlDSA65("ML-DSA-65", 995, PublicKey.class, PrivateKey.class),
+  MlDSA87("ML-DSA-87", 996, PublicKey.class, PrivateKey.class);
 
   final String jceName;
   final int nativeValue;
@@ -59,8 +61,11 @@ enum EvpKeyType {
         return new EvpEcPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       case EdDSA:
         return new EvpEdPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
-      case MlDSA:
-        return new EvpMlDsaPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
+        // TODO [childw] uncomment when implementing key factor
+        //      case MlDSA44:
+        //      case MlDSA65:
+        //      case MlDSA87:
+        //        return new EvpMlDsaPrivateKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       default:
         throw new AssertionError("Unsupported key type");
     }
@@ -76,8 +81,11 @@ enum EvpKeyType {
         return new EvpEcPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       case EdDSA:
         return new EvpEdPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
-      case MlDSA:
-        return new EvpMlDsaPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
+        // TODO [childw] uncomment when implementing key factor
+        //      case MlDSA44:
+        //      case MlDSA65:
+        //      case MlDSA87:
+        //        return new EvpMlDsaPublicKey(fn.applyAsLong(der.getEncoded(), nativeValue));
       default:
         throw new AssertionError("Unsupported key type");
     }

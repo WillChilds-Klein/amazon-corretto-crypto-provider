@@ -5,7 +5,7 @@ package com.amazon.corretto.crypto.provider;
 abstract class EvpMlDsaKey extends EvpKey {
   private static final long serialVersionUID = 1;
 
-  EvpMlDsaKey(final InternalKey key, final boolean isPublicKey) {
-    super(key, EvpKeyType.MlDSA, isPublicKey);
+  EvpMlDsaKey(long ptr, final EvpKeyType type, final boolean isPublicKey) {
+    super(new InternalKey(ptr), type, isPublicKey);
   }
 }
