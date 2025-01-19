@@ -21,6 +21,7 @@ if (ext.isExperimentalFips) {
     ext.isFips = Boolean.getBoolean('FIPS')
 }
 
+// TODO [childw] use AWS-LC release tag here when ready
 ext.awsLcGitVersionId = '3263ce2a553e4e917217fb487f8c6f488fcb1866'
 
 // Check for user inputted git version ID.
@@ -205,10 +206,11 @@ task buildAwsLc {
                 workingDir awslcSrcPath
                 commandLine "git", "fetch", "--tags"
             }
-            exec {
-                workingDir awslcSrcPath
-                commandLine "git", "checkout", awsLcGitVersionId
-            }
+            // TODO [childw] uncomment below
+            //exec {
+                //workingDir awslcSrcPath
+                //commandLine "git", "checkout", awsLcGitVersionId
+            //}
         }
         mkdir "${buildDir}/awslc"
         mkdir sharedObjectOutDir

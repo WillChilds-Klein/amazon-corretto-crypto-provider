@@ -3,7 +3,7 @@
 package com.amazon.corretto.crypto.provider.test;
 
 import static com.amazon.corretto.crypto.provider.test.TestUtil.assertThrows;
-// import static com.amazon.corretto.crypto.provider.test.TestUtil.versionCompare;
+import static com.amazon.corretto.crypto.provider.test.TestUtil.versionCompare;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,7 +16,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-// import java.security.MessageDigest;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
@@ -208,7 +208,6 @@ public class EvpSignatureTest {
     KeyPair ecPair = kg.generateKeyPair();
 
     List<TestParams> paramsList = new ArrayList<>();
-    /*
     for (final String base : BASES) {
       KeyPair currentPair;
       switch (base) {
@@ -292,8 +291,8 @@ public class EvpSignatureTest {
         }
       }
     }
-    */
 
+    // Request algorithms from BC as ML-DSA won't land in JDK until JDK24
     Map<String, KeyPair> mlDsaPairs = new HashMap<>();
     kg = KeyPairGenerator.getInstance("ML-DSA-44", TestUtil.BC_PROVIDER);
     mlDsaPairs.put("ML-DSA-44", kg.generateKeyPair());
@@ -303,6 +302,7 @@ public class EvpSignatureTest {
     mlDsaPairs.put("ML-DSA-87", kg.generateKeyPair());
     for (String algo : mlDsaPairs.keySet()) {
       KeyPair currentPair = mlDsaPairs.get(algo);
+      // TODO [childw] uncomment below to use standard MESSAGE_LENGTHS in tests
       //      for (final int length : MESSAGE_LENGTHS) {
       for (final int length : new int[] {64}) {
         paramsList.add(new TestParams(algo, algo, length, false, false, currentPair, null));
