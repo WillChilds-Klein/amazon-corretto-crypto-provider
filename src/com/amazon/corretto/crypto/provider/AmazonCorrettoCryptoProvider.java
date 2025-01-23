@@ -92,6 +92,9 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     addService("KeyFactory", "RSA", "EvpKeyFactory$RSA");
     addService("KeyFactory", "EC", "EvpKeyFactory$EC");
     addService("KeyFactory", "ML-DSA", "EvpKeyFactory$MlDSA");
+    addService("KeyFactory", "ML-DSA-44", "EvpKeyFactory$MlDSA");
+    addService("KeyFactory", "ML-DSA-65", "EvpKeyFactory$MlDSA");
+    addService("KeyFactory", "ML-DSA-87", "EvpKeyFactory$MlDSA");
 
     if (shouldRegisterEdDSA) {
       // KeyFactories are used to convert key encodings to Java Key objects. ACCP's KeyFactory for
