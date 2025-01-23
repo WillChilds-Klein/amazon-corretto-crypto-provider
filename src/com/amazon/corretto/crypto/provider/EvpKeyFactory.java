@@ -128,7 +128,7 @@ abstract class EvpKeyFactory extends KeyFactorySpi {
   }
 
   protected boolean keyNeedsConversion(Key key) throws InvalidKeyException {
-    if (!type.jceName.equalsIgnoreCase(key.getAlgorithm())) {
+    if (!type.jceName.equalsIgnoreCase(key.getAlgorithm()) && !key.getAlgorithm().startsWith(type.jceName)) {
       throw new InvalidKeyException("Incorrect key algorithm: " + key.getAlgorithm());
     }
     return !(key instanceof EvpKey);
@@ -332,21 +332,9 @@ abstract class EvpKeyFactory extends KeyFactorySpi {
     }
   }
 
-  static class MlDSA44 extends StandardEvpKeyFactory {
-    MlDSA44(AmazonCorrettoCryptoProvider provider) {
-      super(EvpKeyType.MlDSA44, provider);
-    }
-  }
-
-  static class MlDSA65 extends StandardEvpKeyFactory {
-    MlDSA65(AmazonCorrettoCryptoProvider provider) {
-      super(EvpKeyType.MlDSA65, provider);
-    }
-  }
-
-  static class MlDSA87 extends StandardEvpKeyFactory {
-    MlDSA87(AmazonCorrettoCryptoProvider provider) {
-      super(EvpKeyType.MlDSA87, provider);
+  static class MlDSA extends StandardEvpKeyFactory {
+    MlDSA(AmazonCorrettoCryptoProvider provider) {
+      super(EvpKeyType.MlDSA, provider);
     }
   }
 }

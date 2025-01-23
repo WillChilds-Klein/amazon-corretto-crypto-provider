@@ -7,7 +7,7 @@ import java.security.PublicKey;
 class EvpMlDsaPublicKey extends EvpMlDsaKey implements PublicKey {
   private static final long serialVersionUID = 1;
 
-  EvpMlDsaPublicKey(final long ptr, final EvpKeyType type) {
-    super(ptr, type, true);
+  EvpMlDsaPublicKey(final long ptr) {
+    super(ptr, true);
   }
 }

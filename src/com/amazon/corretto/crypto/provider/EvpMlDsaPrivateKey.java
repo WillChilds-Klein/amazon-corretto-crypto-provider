@@ -7,7 +7,7 @@ import java.security.PrivateKey;
 class EvpMlDsaPrivateKey extends EvpMlDsaKey implements PrivateKey {
   private static final long serialVersionUID = 1;
 
-  EvpMlDsaPrivateKey(final long ptr, final EvpKeyType type) {
-    super(ptr, type, false);
+  EvpMlDsaPrivateKey(final long ptr) {
+    super(ptr, false);
   }
 }

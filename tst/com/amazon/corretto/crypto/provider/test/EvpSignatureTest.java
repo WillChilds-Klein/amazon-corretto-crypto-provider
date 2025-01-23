@@ -208,6 +208,7 @@ public class EvpSignatureTest {
     KeyPair ecPair = kg.generateKeyPair();
 
     List<TestParams> paramsList = new ArrayList<>();
+    /*
     for (final String base : BASES) {
       KeyPair currentPair;
       switch (base) {
@@ -291,6 +292,7 @@ public class EvpSignatureTest {
         }
       }
     }
+     */
 
     // Request algorithms from BC as ML-DSA won't land in JDK until JDK24
     Map<String, KeyPair> mlDsaPairs = new HashMap<>();

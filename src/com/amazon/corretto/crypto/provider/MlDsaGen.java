@@ -14,12 +14,16 @@ class MlDsaGen extends KeyPairGeneratorSpi {
   private static native long generateEvpMlDsaKey(int nid);
 
   private final AmazonCorrettoCryptoProvider provider_;
-  private EvpKeyType type_;
+  private Integer type_;
 
-  protected MlDsaGen(AmazonCorrettoCryptoProvider provider, EvpKeyType type) {
+  private MlDsaGen(AmazonCorrettoCryptoProvider provider, Integer type) {
     Loader.checkNativeLibraryAvailability();
     provider_ = provider;
     type_ = type;
+  }
+
+  MlDsaGen(AmazonCorrettoCryptoProvider provider) {
+    this(provider, null);
   }
 
   public void initialize(AlgorithmParameterSpec params, final SecureRandom random) {
@@ -35,27 +39,27 @@ class MlDsaGen extends KeyPairGeneratorSpi {
     if (type_ == null) {
       throw new IllegalStateException("Key type not set");
     }
-    long pkey_ptr = generateEvpMlDsaKey(type_.nativeValue);
-    final PrivateKey privateKey = new EvpMlDsaPrivateKey(pkey_ptr, type_);
-    final PublicKey publicKey = new EvpMlDsaPublicKey(pkey_ptr, type_);
+    long pkey_ptr = generateEvpMlDsaKey(type_);
+    final PrivateKey privateKey = new EvpMlDsaPrivateKey(pkey_ptr);
+    final PublicKey publicKey = new EvpMlDsaPublicKey(pkey_ptr);
     return new KeyPair(publicKey, privateKey);
   }
 
   public static final class MlDsaGen44 extends MlDsaGen {
     public MlDsaGen44(AmazonCorrettoCryptoProvider provider) {
-      super(provider, EvpKeyType.MlDSA44);
+      super(provider, 2);
     }
   }
 
   public static final class MlDsaGen65 extends MlDsaGen {
     public MlDsaGen65(AmazonCorrettoCryptoProvider provider) {
-      super(provider, EvpKeyType.MlDSA65);
+      super(provider, 3);
     }
   }
 
   public static final class MlDsaGen87 extends MlDsaGen {
     public MlDsaGen87(AmazonCorrettoCryptoProvider provider) {
-      super(provider, EvpKeyType.MlDSA87);
+      super(provider, 5);
     }
   }
 }

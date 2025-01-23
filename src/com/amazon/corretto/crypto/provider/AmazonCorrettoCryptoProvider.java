@@ -91,9 +91,10 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
 
     addService("KeyFactory", "RSA", "EvpKeyFactory$RSA");
     addService("KeyFactory", "EC", "EvpKeyFactory$EC");
-    addService("KeyFactory", "ML-DSA-44", "EvpKeyFactory$MlDSA44");
-    addService("KeyFactory", "ML-DSA-65", "EvpKeyFactory$MlDSA65");
-    addService("KeyFactory", "ML-DSA-87", "EvpKeyFactory$MlDSA87");
+    addService("KeyFactory", "ML-DSA", "EvpKeyFactory$MlDSA");
+    addService("KeyFactory", "ML-DSA-44", "EvpKeyFactory$MlDSA");
+    addService("KeyFactory", "ML-DSA-65", "EvpKeyFactory$MlDSA");
+    addService("KeyFactory", "ML-DSA-87", "EvpKeyFactory$MlDSA");
 
     if (shouldRegisterEdDSA) {
       // KeyFactories are used to convert key encodings to Java Key objects. ACCP's KeyFactory for
@@ -130,6 +131,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     addService("KeyPairGenerator", "RSA", "RsaGen");
     addService("KeyPairGenerator", "EC", "EcGen");
 
+    addService("KeyPairGenerator", "ML-DSA", "MlDsaGen");
     addService("KeyPairGenerator", "ML-DSA-44", "MlDsaGen$MlDsaGen44");
     addService("KeyPairGenerator", "ML-DSA-65", "MlDsaGen$MlDsaGen65");
     addService("KeyPairGenerator", "ML-DSA-87", "MlDsaGen$MlDsaGen87");
@@ -220,9 +222,10 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       addService("Signature", "EdDSA", "EvpSignatureRaw$Ed25519");
       addService("Signature", "Ed25519", "EvpSignatureRaw$Ed25519");
     }
-    addService("Signature", "ML-DSA-44", "EvpSignature$MlDSA44");
-    addService("Signature", "ML-DSA-65", "EvpSignature$MlDSA65");
-    addService("Signature", "ML-DSA-87", "EvpSignature$MlDSA87");
+    addService("Signature", "ML-DSA", "EvpSignature$MlDSA");
+    addService("Signature", "ML-DSA-44", "EvpSignature$MlDSA");
+    addService("Signature", "ML-DSA-65", "EvpSignature$MlDSA");
+    addService("Signature", "ML-DSA-87", "EvpSignature$MlDSA");
   }
 
   private ACCPService addService(
@@ -744,9 +747,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
             edFactory = new EdKeyFactory(this);
           }
           return edFactory;
-        case MlDSA44:
-        case MlDSA65:
-        case MlDSA87:
+        case MlDSA:
           if (mlDsaFactory == null) {
             mlDsaFactory = KeyFactory.getInstance(keyType.jceName, this);
           }

@@ -66,7 +66,7 @@ bool initializeContext(raii_env& env,
     EVP_PKEY_up_ref(pKey);
     ctx->setKey(pKey);
 
-    if (md != nullptr || EVP_PKEY_id(pKey) == EVP_PKEY_ED25519) {
+    if (md != nullptr || EVP_PKEY_id(pKey) == EVP_PKEY_ED25519 || EVP_PKEY_id(pKey) == EVP_PKEY_PQDSA) {
         if (!ctx->setDigestCtx(EVP_MD_CTX_create())) {
             throw_openssl("Unable to create MD_CTX");
         }
@@ -164,12 +164,15 @@ JNIEXPORT jlong JNICALL Java_com_amazon_corretto_crypto_provider_EvpSignature_si
 
         EvpKeyContext ctx;
 
+//            printf("FOOBAR init'ing\n");
         initializeContext(env, &ctx,
             true, // true->sign
             reinterpret_cast<EVP_PKEY*>(pKey), reinterpret_cast<const EVP_MD*>(mdPtr), paddingType,
             reinterpret_cast<const EVP_MD*>(mgfMdPtr), pssSaltLen);
+//            printf("FOOBAR init'd\n");
 
         update(env, &ctx, digestSignUpdate, java_buffer::from_array(env, message, offset, length));
+//            printf("FOOBAR update'd\n");
         return reinterpret_cast<jlong>(ctx.moveToHeap());
     } catch (java_ex& ex) {
         ex.throw_to_java(pEnv);
@@ -369,6 +372,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_amazon_corretto_crypto_provider_EvpSignatu
         tmpSig.resize(sigLength);
 
         if (!EVP_DigestSignFinal(ctx->getDigestCtx(), &tmpSig[0], &sigLength)) {
+//            printf("FOOBAR UNABLE TO SIGN %s\n", EVP_MD_name(ctx->getDigestCtx()->digest));
             // If signature fails due to sizing concerns, give an informative exception
             const uint32_t lastErr = ERR_peek_last_error();
             if ((lastErr & RSA_R_DATA_TOO_LARGE_FOR_KEY_SIZE) == RSA_R_DATA_TOO_LARGE_FOR_KEY_SIZE
@@ -456,7 +460,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_amazon_corretto_crypto_provider_EvpSignatu
 
         int keyType = EVP_PKEY_id(reinterpret_cast<EVP_PKEY*>(pKey));
 
-        if (keyType == EVP_PKEY_ED25519) {
+        if (keyType == EVP_PKEY_ED25519 || keyType == EVP_PKEY_PQDSA) {
             jni_borrow message(env, messageBuf, "message");
 
             if (!EVP_DigestSign(ctx.getDigestCtx(), NULL, &sigLength, message.data(), message.len())) {
@@ -526,7 +530,7 @@ JNIEXPORT jboolean JNICALL Java_com_amazon_corretto_crypto_provider_EvpSignature
 
         int ret;
         int keyType = EVP_PKEY_id(reinterpret_cast<EVP_PKEY*>(pKey));
-        if (keyType == EVP_PKEY_ED25519) {
+        if (keyType == EVP_PKEY_ED25519 || keyType == EVP_PKEY_PQDSA) {
             ret = EVP_DigestVerify(
                 ctx.getDigestCtx(), signature.data(), signature.len(), message.data(), message.len());
         } else {
