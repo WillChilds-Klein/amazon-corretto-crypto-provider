@@ -208,7 +208,6 @@ public class EvpSignatureTest {
     KeyPair ecPair = kg.generateKeyPair();
 
     List<TestParams> paramsList = new ArrayList<>();
-    /*
     for (final String base : BASES) {
       KeyPair currentPair;
       switch (base) {
@@ -292,7 +291,6 @@ public class EvpSignatureTest {
         }
       }
     }
-     */
 
     // Request algorithms from BC as ML-DSA won't land in JDK until JDK24
     Map<String, KeyPair> mlDsaPairs = new HashMap<>();
@@ -307,10 +305,10 @@ public class EvpSignatureTest {
       // TODO [childw] uncomment below to use standard MESSAGE_LENGTHS in tests
       //      for (final int length : MESSAGE_LENGTHS) {
       for (final int length : new int[] {64}) {
-        paramsList.add(new TestParams(algo, algo, length, false, false, currentPair, null));
-        paramsList.add(new TestParams(algo, algo, length, true, false, currentPair, null));
-        paramsList.add(new TestParams(algo, algo, length, false, true, currentPair, null));
-        paramsList.add(new TestParams(algo, algo, length, true, true, currentPair, null));
+        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, false, false, currentPair, null));
+        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, true, false, currentPair, null));
+        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, false, true, currentPair, null));
+        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, true, true, currentPair, null));
       }
     }
 
