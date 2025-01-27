@@ -3,7 +3,9 @@
 #include "auto_free.h"
 #include "env.h"
 #include "generated-headers.h"
+
 #include <openssl/evp.h>
+#include <openssl/nid.h>
 
 using namespace AmazonCorrettoCryptoProvider;
 
@@ -15,14 +17,19 @@ JNIEXPORT jlong JNICALL Java_com_amazon_corretto_crypto_provider_MlDsaGen_genera
         EVP_PKEY_auto key;
         EVP_PKEY_CTX_auto ctx = EVP_PKEY_CTX_auto::from(EVP_PKEY_CTX_new_id(EVP_PKEY_PQDSA, NULL));
         CHECK_OPENSSL(ctx.isInitialized());
-        int nid = 0; // TODO [cildw] fix this with constants
+        int nid;
         switch (level) {
         case 2:
-            nid = 994;
+            nid = NID_MLDSA44;
+            break;
         case 3:
-            nid = 995;
+            nid = NID_MLDSA65;
+            break;
         case 5:
-            nid = 996;
+            nid = NID_MLDSA87;
+            break;
+        default:
+            throw java_ex(EX_ILLEGAL_ARGUMENT, "Invalid level");
         }
         CHECK_OPENSSL(EVP_PKEY_CTX_pqdsa_set_params(ctx, nid));
         CHECK_OPENSSL(EVP_PKEY_keygen_init(ctx));

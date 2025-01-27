@@ -14,7 +14,7 @@ class MlDsaGen extends KeyPairGeneratorSpi {
   private static native long generateEvpMlDsaKey(int nid);
 
   private final AmazonCorrettoCryptoProvider provider_;
-  private Integer type_;
+  private int type_ = -1;
 
   private MlDsaGen(AmazonCorrettoCryptoProvider provider, Integer type) {
     Loader.checkNativeLibraryAvailability();
@@ -36,7 +36,7 @@ class MlDsaGen extends KeyPairGeneratorSpi {
 
   @Override
   public KeyPair generateKeyPair() {
-    if (type_ == null) {
+    if (type_ < 0) {
       throw new IllegalStateException("Key type not set");
     }
     long pkey_ptr = generateEvpMlDsaKey(type_);
