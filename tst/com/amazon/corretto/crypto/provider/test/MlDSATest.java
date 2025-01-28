@@ -45,31 +45,25 @@ public class MlDSATest {
     private final Provider verifierProv;
     private final PrivateKey priv;
     private final PublicKey pub;
-    private final byte[] signMessage;
-    private final byte[] verifyMessage;
+    private final byte[] message;
 
     public TestParams(
         Provider signerProv,
         Provider verifierProv,
         PrivateKey priv,
         PublicKey pub,
-        byte[] signMessage,
-        byte[] verifyMessage) {
+        byte[] message) {
       this.signerProv = signerProv;
       this.verifierProv = verifierProv;
       this.priv = priv;
       this.pub = pub;
-      this.signMessage = signMessage;
-      this.verifyMessage = verifyMessage;
+      this.message = message;
     }
 
     public String toString() {
       return String.format(
-          "signer: %s, verifier: %s, message size: %d, messsages equal: %s",
-          signerProv.getName(),
-          verifierProv.getName(),
-          signMessage.length,
-          Arrays.equals(signMessage, verifyMessage));
+          "signer: %s, verifier: %s, message size: %d",
+          signerProv.getName(), verifierProv.getName(), message.length);
     }
   }
 
@@ -81,7 +75,8 @@ public class MlDSATest {
         PublicKey nativePub = keyPair.getPublic();
         PrivateKey nativePriv = keyPair.getPrivate();
 
-        // Convert ACCP native key to BouncyCastle key
+        // Convert ACCP native key to BouncyCastle key, as BouncyCastle ML-DSA Signatures don't
+        // support non-Bouncy-Castle keys.
         KeyFactory bcKf = KeyFactory.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
         PublicKey bcPub = bcKf.generatePublic(new X509EncodedKeySpec(nativePub.getEncoded()));
         PrivateKey bcPriv = bcKf.generatePrivate(new PKCS8EncodedKeySpec(nativePriv.getEncoded()));
@@ -89,22 +84,14 @@ public class MlDSATest {
         Provider nativeProv = NATIVE_PROVIDER;
         Provider bcProv = TestUtil.BC_PROVIDER;
 
-        byte[] m1 = new byte[messageSize];
-        Arrays.fill(m1, (byte) 'A');
-        byte[] m2 = new byte[messageSize];
-        Arrays.fill(m2, (byte) 'B');
+        byte[] message = new byte[messageSize];
+        Arrays.fill(message, (byte) 'A');
 
         // Verification success
-        params.add(new TestParams(nativeProv, nativeProv, nativePriv, nativePub, m1, m1));
-        params.add(new TestParams(nativeProv, bcProv, nativePriv, bcPub, m1, m1));
-        params.add(new TestParams(bcProv, nativeProv, bcPriv, nativePub, m1, m1));
-        params.add(new TestParams(bcProv, bcProv, bcPriv, bcPub, m1, m1));
-
-        // Verification failure
-        params.add(new TestParams(nativeProv, nativeProv, nativePriv, nativePub, m1, m2));
-        params.add(new TestParams(nativeProv, bcProv, nativePriv, bcPub, m1, m2));
-        params.add(new TestParams(bcProv, nativeProv, bcPriv, nativePub, m1, m2));
-        params.add(new TestParams(bcProv, bcProv, bcPriv, bcPub, m1, m2));
+        params.add(new TestParams(nativeProv, nativeProv, nativePriv, nativePub, message));
+        params.add(new TestParams(nativeProv, bcProv, nativePriv, bcPub, message));
+        params.add(new TestParams(bcProv, nativeProv, bcPriv, nativePub, message));
+        params.add(new TestParams(bcProv, bcProv, bcPriv, bcPub, message));
       }
     }
     return params;
@@ -117,29 +104,45 @@ public class MlDSATest {
     Signature verifier = Signature.getInstance("ML-DSA", params.verifierProv);
     PrivateKey priv = params.priv;
     PublicKey pub = params.pub;
-    byte[] signMessage = params.signMessage;
-    byte[] verifyMessage = params.verifyMessage;
+    byte[] message = Arrays.copyOf(params.message, params.message.length);
 
     signer.initSign(priv);
-    signer.update(signMessage);
+    signer.update(message);
     byte[] signatureBytes = signer.sign();
-
     verifier.initVerify(pub);
-    verifier.update(verifyMessage);
-    if (Arrays.equals(signMessage, verifyMessage)) {
-      assertTrue(verifier.verify(signatureBytes));
-    } else {
-      assertFalse(verifier.verify(signatureBytes));
-    }
+    verifier.update(message);
+    assertTrue(verifier.verify(signatureBytes));
 
-    // Because ML-DSA uses per-signature randomness, signatures over identical inputs should be
-    // unique
+    // Because ACCP's ML-DSA uses per-signature randomness, its signatures over identical inputs
+    // should be
+    // unique.
     if (signer.getProvider() == NATIVE_PROVIDER) {
       signer.initSign(priv);
-      signer.update(signMessage);
+      signer.update(message);
       byte[] secondSignatureBytes = signer.sign();
       assertFalse(Arrays.equals(signatureBytes, secondSignatureBytes));
     }
+
+    // Verifying a different message should result in verification failure
+    if (message.length > 0) {
+      signer.initSign(priv);
+      signer.update(message);
+      signatureBytes = signer.sign();
+      verifier.initVerify(pub);
+      byte[] otherMessage = Arrays.copyOf(message, message.length);
+      otherMessage[0] ^= otherMessage[0];
+      verifier.update(otherMessage);
+      assertFalse(verifier.verify(signatureBytes));
+    }
+
+    // Corrupting the signature should result in verification failure
+    signer.initSign(priv);
+    signer.update(message);
+    signatureBytes = signer.sign();
+    verifier.initVerify(pub);
+    verifier.update(message);
+    signatureBytes[0] ^= signatureBytes[0];
+    assertFalse(verifier.verify(signatureBytes));
   }
 
   @ParameterizedTest
