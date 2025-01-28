@@ -2,41 +2,27 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.crypto.provider.test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.amazon.corretto.crypto.provider.test.TestUtil.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.SignatureException;
-import java.security.interfaces.ECKey;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.PSSParameterSpec;
-import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
@@ -45,12 +31,119 @@ import org.junit.jupiter.api.parallel.ResourceAccessMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+@Execution(ExecutionMode.CONCURRENT)
+@ExtendWith(TestResultLogger.class)
+@ResourceLock(value = TestUtil.RESOURCE_GLOBAL, mode = ResourceAccessMode.READ)
 public class MlDSATest {
   private static final Provider NATIVE_PROVIDER = AmazonCorrettoCryptoProvider.INSTANCE;
-  // TODO [childw] parameterize keygen algo + message size
-  // private static String[] MLDSA_KEYGEN_ALGOS = new String {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"};
-  private static final byte[] MESSAGE = {0x01, 0x02, 0x03, 0x04};
+  private static final int[] MESSAGE_LENGTHS = new int[] {0, 1, 16, 32, 2047, 2048, 2049, 4100};
+
+  private static class TestParams {
+    private final Signature signer;
+    private final Signature verifier;
+    private final PrivateKey priv;
+    private final PublicKey pub;
+    private final byte[] signMessage;
+    private final byte[] verifyMessage;
+
+    public TestParams(
+        Signature signer,
+        Signature verifier,
+        PrivateKey priv,
+        PublicKey pub,
+        byte[] signMessage,
+        byte[] verifyMessage) {
+      this.signer = signer;
+      this.verifier = verifier;
+      this.priv = priv;
+      this.pub = pub;
+      this.signMessage = signMessage;
+      this.verifyMessage = verifyMessage;
+    }
+
+    public String toString() {
+      return String.format(
+          "signer: %s, verifier: %s, message size: %d, messsages equal: %s",
+          signer.getProvider().getName(),
+          verifier.getProvider().getName(),
+          signMessage.length,
+          Arrays.equals(signMessage, verifyMessage));
+    }
+  }
+
+  private static List<TestParams> getParams() throws Exception {
+    List<TestParams> params = new ArrayList<TestParams>();
+    for (String algo : new String[] {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}) {
+      for (int messageSize : MESSAGE_LENGTHS) {
+        KeyPair keyPair = KeyPairGenerator.getInstance(algo, NATIVE_PROVIDER).generateKeyPair();
+        PublicKey nativePub = keyPair.getPublic();
+        PrivateKey nativePriv = keyPair.getPrivate();
+
+        Signature nativeSigner = Signature.getInstance("ML-DSA", NATIVE_PROVIDER);
+        Signature nativeVerifier = Signature.getInstance("ML-DSA", NATIVE_PROVIDER);
+
+        // Convert ACCP native key to BouncyCastle key
+        KeyFactory bcKf = KeyFactory.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
+        PublicKey bcPub = bcKf.generatePublic(new X509EncodedKeySpec(nativePub.getEncoded()));
+        PrivateKey bcPriv = bcKf.generatePrivate(new PKCS8EncodedKeySpec(nativePriv.getEncoded()));
+
+        Signature bcSigner = Signature.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
+        Signature bcVerifier = Signature.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
+
+        byte[] m1 = new byte[messageSize];
+        Arrays.fill(m1, (byte) 'A');
+        byte[] m2 = new byte[messageSize];
+        Arrays.fill(m2, (byte) 'B');
+
+        // Verification success
+        params.add(new TestParams(nativeSigner, nativeVerifier, nativePriv, nativePub, m1, m1));
+        params.add(new TestParams(nativeSigner, bcVerifier, nativePriv, bcPub, m1, m1));
+        params.add(new TestParams(bcSigner, nativeVerifier, bcPriv, nativePub, m1, m1));
+        params.add(new TestParams(bcSigner, bcVerifier, bcPriv, bcPub, m1, m1));
+
+        // Verification failure
+        params.add(new TestParams(nativeSigner, nativeVerifier, nativePriv, nativePub, m1, m2));
+        params.add(new TestParams(nativeSigner, bcVerifier, nativePriv, bcPub, m1, m2));
+        params.add(new TestParams(bcSigner, nativeVerifier, bcPriv, nativePub, m1, m2));
+        params.add(new TestParams(bcSigner, bcVerifier, bcPriv, bcPub, m1, m2));
+      }
+    }
+    return params;
+  }
+
+  @ParameterizedTest
+  @MethodSource("getParams")
+  public void testInteropRoundTrips(TestParams params) throws Exception {
+    Signature signer = params.signer;
+    Signature verifier = params.verifier;
+    PrivateKey priv = params.priv;
+    PublicKey pub = params.pub;
+    byte[] signMessage = params.signMessage;
+    byte[] verifyMessage = params.verifyMessage;
+
+    signer.initSign(priv);
+    signer.update(signMessage);
+    byte[] signatureBytes = signer.sign();
+
+    verifier.initVerify(pub);
+    verifier.update(verifyMessage);
+    if (Arrays.equals(signMessage, verifyMessage)) {
+      assertTrue(verifier.verify(signatureBytes));
+    } else {
+      assertFalse(verifier.verify(signatureBytes));
+    }
+
+    // Because ML-DSA uses per-signature randomness, signatures over identical inputs should be
+    // unique
+    if (signer.getProvider() == NATIVE_PROVIDER) {
+      signer.initSign(priv);
+      signer.update(signMessage);
+      byte[] secondSignatureBytes = signer.sign();
+      assertFalse(Arrays.equals(signatureBytes, secondSignatureBytes));
+    }
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"})
@@ -66,18 +159,16 @@ public class MlDSATest {
   }
 
   @Test
-  public void testKeyFactoryConversion() throws Exception {
+  public void testKeyFactorySelfConversion() throws Exception {
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ML-DSA", NATIVE_PROVIDER);
     KeyPair originalKeyPair = keyGen.generateKeyPair();
 
     KeyFactory keyFactory = KeyFactory.getInstance("ML-DSA", NATIVE_PROVIDER);
 
-    // Test public key conversion
     byte[] publicKeyEncoded = originalKeyPair.getPublic().getEncoded();
     PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyEncoded));
     assertArrayEquals(publicKeyEncoded, publicKey.getEncoded());
 
-    // Test private key conversion
     byte[] privateKeyEncoded = originalKeyPair.getPrivate().getEncoded();
     PrivateKey privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyEncoded));
     assertArrayEquals(privateKeyEncoded, privateKey.getEncoded());
@@ -102,83 +193,8 @@ public class MlDSATest {
         });
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"})
-  public void testRoundTrips(String algo) throws Exception {
-    KeyPair keyPair = KeyPairGenerator.getInstance(algo, NATIVE_PROVIDER).generateKeyPair();
-    PublicKey nativePub = keyPair.getPublic();
-    PrivateKey nativePriv = keyPair.getPrivate();
-
-    // Convert ACCP native key to BouncyCastle key
-    KeyFactory bcKf = KeyFactory.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
-    PublicKey bcPub = bcKf.generatePublic(new X509EncodedKeySpec(nativePub.getEncoded()));
-    PrivateKey bcPriv = bcKf.generatePrivate(new PKCS8EncodedKeySpec(nativePriv.getEncoded()));
-
-    Signature bcSig = Signature.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
-    Signature nativeSig = Signature.getInstance("ML-DSA", NATIVE_PROVIDER);
-
-    // BouncyCastle -> BouncyCastle (bad signature)
-    bcSig.initSign(bcPriv);
-    bcSig.update(MESSAGE);
-    byte[] sigBytes = bcSig.sign();
-    bcSig.initVerify(bcPub);
-    bcSig.update(MESSAGE);
-    assertTrue(bcSig.verify(sigBytes));
-
-    // ACCP -> ACCP (bad signature)
-    nativeSig.initSign(nativePriv);
-    nativeSig.update(MESSAGE);
-    sigBytes = nativeSig.sign();
-    nativeSig.initVerify(nativePub);
-    nativeSig.update(MESSAGE);
-    assertTrue(nativeSig.verify(sigBytes));
-
-    // BouncyCastle -> ACCP (good signature)
-    bcSig.initSign(bcPriv);
-    bcSig.update(MESSAGE);
-    sigBytes = bcSig.sign();
-    nativeSig.initVerify(nativePub);
-    nativeSig.update(MESSAGE);
-    assertTrue(nativeSig.verify(sigBytes));
-
-    // ACCP -> BouncyCastle (good signature)
-    nativeSig.initSign(nativePriv);
-    nativeSig.update(MESSAGE);
-    sigBytes = nativeSig.sign();
-    bcSig.initVerify(bcPub);
-    bcSig.update(MESSAGE);
-    assertTrue(bcSig.verify(sigBytes));
-
-    // BouncyCastle -> BouncyCastle (bad signature)
-    bcSig.initSign(bcPriv);
-    bcSig.update(MESSAGE);
-    sigBytes = bcSig.sign();
-    bcSig.initVerify(bcPub);
-    bcSig.update("Different message".getBytes());
-    assertFalse(bcSig.verify(sigBytes));
-
-    // ACCP -> ACCP (bad signature)
-    nativeSig.initSign(nativePriv);
-    nativeSig.update(MESSAGE);
-    sigBytes = nativeSig.sign();
-    nativeSig.initVerify(nativePub);
-    nativeSig.update("Different message".getBytes());
-    assertFalse(nativeSig.verify(sigBytes));
-
-    // BouncyCastle -> ACCP (bad signature)
-    bcSig.initSign(bcPriv);
-    bcSig.update(MESSAGE);
-    sigBytes = bcSig.sign();
-    nativeSig.initVerify(nativePub);
-    nativeSig.update("Different message".getBytes());
-    assertFalse(nativeSig.verify(sigBytes));
-
-    // ACCP -> BouncyCastle (bad signature)
-    nativeSig.initSign(nativePriv);
-    nativeSig.update(MESSAGE);
-    sigBytes = nativeSig.sign();
-    bcSig.initVerify(bcPub);
-    bcSig.update("Different message".getBytes());
-    assertFalse(bcSig.verify(sigBytes));
+  @Test
+  public void codifyBcDifferences() {
+    // TODO [childw] hard-coded test to document de/serialization tests between ACCP and BC
   }
 }
