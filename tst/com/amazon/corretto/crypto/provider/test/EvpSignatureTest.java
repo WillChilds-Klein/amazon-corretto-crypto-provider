@@ -14,13 +14,11 @@ import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -29,16 +27,13 @@ import java.security.interfaces.ECKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.PSSParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -193,7 +188,6 @@ public class EvpSignatureTest {
       try {
         signer.initSign(keyPair.getPrivate());
         verifier.initVerify(keyPair.getPublic());
-        // TODO [childw] need to adjust this.
         jceVerifier.initVerify(keyPair.getPublic());
       } catch (final GeneralSecurityException ex) {
         throw new AssertionError(ex);
@@ -293,19 +287,6 @@ public class EvpSignatureTest {
             }
           }
         }
-      }
-    }
-
-    // Request algorithms from BC as ML-DSA won't land in JDK until JDK24
-    // TODO [childw]
-    for (String algo : new String[] {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}) {
-      kg = KeyPairGenerator.getInstance(algo, NATIVE_PROVIDER);
-      KeyPair currentPair = kg.generateKeyPair();
-      for (final int length : MESSAGE_LENGTHS) {
-        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, false, false, currentPair, null));
-        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, true, false, currentPair, null));
-        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, false, true, currentPair, null));
-        paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, true, true, currentPair, null));
       }
     }
 
@@ -618,7 +599,8 @@ public class EvpSignatureTest {
   @MethodSource("corruptedSignatureParams")
   public void corruptedSignatureYieldsException(TestParams params) {
     // JCA/JCE standards require that we try to throw an exception if the underlying signature is
-    // "corrupt" and not just invalid.
+    // "corrupt" and not
+    // just invalid.
     byte[] badSignature = params.goodSignature.clone();
     for (int x = 0; x < badSignature.length; x++) {
       badSignature[x] ^= 0x5c; // Arbitrary value to twiddle the bits
@@ -708,50 +690,5 @@ public class EvpSignatureTest {
       result = result.slice();
     }
     return result;
-  }
-
-  @Test
-  public void doStuff() throws Exception {
-    byte[] msg = new byte[] {0x08, 0x02, 0x03, 0x04, 0x05};
-    Signature bcSig = Signature.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
-    Signature nativeSig = Signature.getInstance("ML-DSA", NATIVE_PROVIDER);
-
-    KeyPair keyPair = KeyPairGenerator.getInstance("ML-DSA-44", NATIVE_PROVIDER).generateKeyPair();
-    PublicKey nativePub = keyPair.getPublic();
-    PrivateKey nativePriv = keyPair.getPrivate();
-
-    KeyFactory bcKf = KeyFactory.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
-    PublicKey bcPub = bcKf.generatePublic(new X509EncodedKeySpec(nativePub.getEncoded()));
-    // NOTE: using this cconstructor designates private material as full seed. the
-    // (MLDSAParameterSpec, byte[]) signature causes the byte[] to be interpreted as a seed.
-    PrivateKey bcPriv = bcKf.generatePrivate(new PKCS8EncodedKeySpec(nativePriv.getEncoded()));
-
-    bcSig.initSign(bcPriv);
-    bcSig.update(msg);
-    byte[] bs = bcSig.sign();
-    bcSig.initVerify(bcPub);
-    bcSig.update(msg);
-    assertTrue(bcSig.verify(bs));
-
-    nativeSig.initSign(nativePriv);
-    nativeSig.update(msg);
-    bs = nativeSig.sign();
-    nativeSig.initVerify(nativePub);
-    nativeSig.update(msg);
-    assertTrue(nativeSig.verify(bs));
-
-    bcSig.initSign(bcPriv);
-    bcSig.update(msg);
-    byte[] bcSigBytes = bcSig.sign();
-    nativeSig.initVerify(nativePub);
-    nativeSig.update(msg);
-    assertTrue(nativeSig.verify(bcSigBytes));
-
-    nativeSig.initSign(nativePriv);
-    nativeSig.update(msg);
-    byte[] nativeSigBytes = nativeSig.sign();
-    bcSig.initVerify(bcPub);
-    bcSig.update(msg);
-    assertTrue(bcSig.verify(nativeSigBytes));
   }
 }
