@@ -298,9 +298,8 @@ public class EvpSignatureTest {
 
     // Request algorithms from BC as ML-DSA won't land in JDK until JDK24
     // TODO [childw]
-    //    for (String algo : new String[] {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}) {
-    for (String algo : new String[] {"ML-DSA"}) {
-      kg = KeyPairGenerator.getInstance(algo, TestUtil.BC_PROVIDER);
+    for (String algo : new String[] {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"}) {
+      kg = KeyPairGenerator.getInstance(algo, NATIVE_PROVIDER);
       KeyPair currentPair = kg.generateKeyPair();
       for (final int length : MESSAGE_LENGTHS) {
         paramsList.add(new TestParams("ML-DSA", "ML-DSA", length, false, false, currentPair, null));
