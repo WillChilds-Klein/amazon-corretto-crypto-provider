@@ -87,7 +87,6 @@ public class MlDSATest {
         byte[] message = new byte[messageSize];
         Arrays.fill(message, (byte) 'A');
 
-        // Verification success
         params.add(new TestParams(nativeProv, nativeProv, nativePriv, nativePub, message));
         params.add(new TestParams(nativeProv, bcProv, nativePriv, bcPub, message));
         params.add(new TestParams(bcProv, nativeProv, bcPriv, nativePub, message));
@@ -130,7 +129,7 @@ public class MlDSATest {
       signatureBytes = signer.sign();
       verifier.initVerify(pub);
       byte[] otherMessage = Arrays.copyOf(message, message.length);
-      otherMessage[0] ^= otherMessage[0];
+      otherMessage[0] ^= 0xff; // flip all bits in the first byte
       verifier.update(otherMessage);
       assertFalse(verifier.verify(signatureBytes));
     }
@@ -141,7 +140,7 @@ public class MlDSATest {
     signatureBytes = signer.sign();
     verifier.initVerify(pub);
     verifier.update(message);
-    signatureBytes[0] ^= signatureBytes[0];
+    signatureBytes[0] ^= 0xff; // flip all bits in the first byte
     assertFalse(verifier.verify(signatureBytes));
   }
 
