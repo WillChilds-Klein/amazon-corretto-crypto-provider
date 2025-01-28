@@ -32,7 +32,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_corretto_crypto_provider_MlDsaGen_genera
             throw java_ex(EX_ILLEGAL_ARGUMENT, "Invalid level");
         }
         CHECK_OPENSSL(EVP_PKEY_CTX_pqdsa_set_params(ctx, nid));
-        CHECK_OPENSSL(EVP_PKEY_keygen_init(ctx));
+        CHECK_OPENSSL(EVP_PKEY_keygen_init(ctx) == 1);
         CHECK_OPENSSL(EVP_PKEY_keygen(ctx, key.getAddressOfPtr()));
         return reinterpret_cast<jlong>(key.take());
     } catch (java_ex& ex) {
