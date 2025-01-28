@@ -41,22 +41,22 @@ public class MlDSATest {
   private static final int[] MESSAGE_LENGTHS = new int[] {0, 1, 16, 32, 2047, 2048, 2049, 4100};
 
   private static class TestParams {
-    private final Signature signer;
-    private final Signature verifier;
+    private final Provider signerProv;
+    private final Provider verifierProv;
     private final PrivateKey priv;
     private final PublicKey pub;
     private final byte[] signMessage;
     private final byte[] verifyMessage;
 
     public TestParams(
-        Signature signer,
-        Signature verifier,
+        Provider signerProv,
+        Provider verifierProv,
         PrivateKey priv,
         PublicKey pub,
         byte[] signMessage,
         byte[] verifyMessage) {
-      this.signer = signer;
-      this.verifier = verifier;
+      this.signerProv = signerProv;
+      this.verifierProv = verifierProv;
       this.priv = priv;
       this.pub = pub;
       this.signMessage = signMessage;
@@ -66,8 +66,8 @@ public class MlDSATest {
     public String toString() {
       return String.format(
           "signer: %s, verifier: %s, message size: %d, messsages equal: %s",
-          signer.getProvider().getName(),
-          verifier.getProvider().getName(),
+          signerProv.getName(),
+          verifierProv.getName(),
           signMessage.length,
           Arrays.equals(signMessage, verifyMessage));
     }
@@ -81,16 +81,13 @@ public class MlDSATest {
         PublicKey nativePub = keyPair.getPublic();
         PrivateKey nativePriv = keyPair.getPrivate();
 
-        Signature nativeSigner = Signature.getInstance("ML-DSA", NATIVE_PROVIDER);
-        Signature nativeVerifier = Signature.getInstance("ML-DSA", NATIVE_PROVIDER);
-
         // Convert ACCP native key to BouncyCastle key
         KeyFactory bcKf = KeyFactory.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
         PublicKey bcPub = bcKf.generatePublic(new X509EncodedKeySpec(nativePub.getEncoded()));
         PrivateKey bcPriv = bcKf.generatePrivate(new PKCS8EncodedKeySpec(nativePriv.getEncoded()));
 
-        Signature bcSigner = Signature.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
-        Signature bcVerifier = Signature.getInstance("ML-DSA", TestUtil.BC_PROVIDER);
+        Provider nativeProv = NATIVE_PROVIDER;
+        Provider bcProv = TestUtil.BC_PROVIDER;
 
         byte[] m1 = new byte[messageSize];
         Arrays.fill(m1, (byte) 'A');
@@ -98,16 +95,16 @@ public class MlDSATest {
         Arrays.fill(m2, (byte) 'B');
 
         // Verification success
-        params.add(new TestParams(nativeSigner, nativeVerifier, nativePriv, nativePub, m1, m1));
-        params.add(new TestParams(nativeSigner, bcVerifier, nativePriv, bcPub, m1, m1));
-        params.add(new TestParams(bcSigner, nativeVerifier, bcPriv, nativePub, m1, m1));
-        params.add(new TestParams(bcSigner, bcVerifier, bcPriv, bcPub, m1, m1));
+        params.add(new TestParams(nativeProv, nativeProv, nativePriv, nativePub, m1, m1));
+        params.add(new TestParams(nativeProv, bcProv, nativePriv, bcPub, m1, m1));
+        params.add(new TestParams(bcProv, nativeProv, bcPriv, nativePub, m1, m1));
+        params.add(new TestParams(bcProv, bcProv, bcPriv, bcPub, m1, m1));
 
         // Verification failure
-        params.add(new TestParams(nativeSigner, nativeVerifier, nativePriv, nativePub, m1, m2));
-        params.add(new TestParams(nativeSigner, bcVerifier, nativePriv, bcPub, m1, m2));
-        params.add(new TestParams(bcSigner, nativeVerifier, bcPriv, nativePub, m1, m2));
-        params.add(new TestParams(bcSigner, bcVerifier, bcPriv, bcPub, m1, m2));
+        params.add(new TestParams(nativeProv, nativeProv, nativePriv, nativePub, m1, m2));
+        params.add(new TestParams(nativeProv, bcProv, nativePriv, bcPub, m1, m2));
+        params.add(new TestParams(bcProv, nativeProv, bcPriv, nativePub, m1, m2));
+        params.add(new TestParams(bcProv, bcProv, bcPriv, bcPub, m1, m2));
       }
     }
     return params;
@@ -116,8 +113,8 @@ public class MlDSATest {
   @ParameterizedTest
   @MethodSource("getParams")
   public void testInteropRoundTrips(TestParams params) throws Exception {
-    Signature signer = params.signer;
-    Signature verifier = params.verifier;
+    Signature signer = Signature.getInstance("ML-DSA", params.signerProv);
+    Signature verifier = Signature.getInstance("ML-DSA", params.verifierProv);
     PrivateKey priv = params.priv;
     PublicKey pub = params.pub;
     byte[] signMessage = params.signMessage;
