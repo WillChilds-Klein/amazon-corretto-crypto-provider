@@ -10,7 +10,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 class MlDsaGen extends KeyPairGeneratorSpi {
-  /** Generates a new MlDsa25519 key and returns a pointer to it. */
+  /** Generates a new ML-DSA key and returns a pointer to it. */
   private static native long generateEvpMlDsaKey(int nid);
 
   private final AmazonCorrettoCryptoProvider provider_;
@@ -40,8 +40,8 @@ class MlDsaGen extends KeyPairGeneratorSpi {
       throw new IllegalStateException("Key type not set");
     }
     long pkey_ptr = generateEvpMlDsaKey(type_);
-    final PrivateKey privateKey = new EvpMlDsaPrivateKey(pkey_ptr);
-    final PublicKey publicKey = new EvpMlDsaPublicKey(pkey_ptr);
+    final EvpMlDsaPrivateKey privateKey = new EvpMlDsaPrivateKey(pkey_ptr);
+    final EvpMlDsaPublicKey publicKey = privateKey.getPublicKey();
     return new KeyPair(publicKey, privateKey);
   }
 

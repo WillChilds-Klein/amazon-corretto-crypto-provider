@@ -8,6 +8,10 @@ class EvpMlDsaPublicKey extends EvpMlDsaKey implements PublicKey {
   private static final long serialVersionUID = 1;
 
   EvpMlDsaPublicKey(final long ptr) {
-    super(ptr, true);
+    this(new InternalKey(ptr));
+  }
+
+  EvpMlDsaPublicKey(final InternalKey key) {
+    super(key, true);
   }
 }
