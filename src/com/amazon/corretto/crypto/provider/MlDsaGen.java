@@ -4,8 +4,6 @@ package com.amazon.corretto.crypto.provider;
 
 import java.security.KeyPair;
 import java.security.KeyPairGeneratorSpi;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
