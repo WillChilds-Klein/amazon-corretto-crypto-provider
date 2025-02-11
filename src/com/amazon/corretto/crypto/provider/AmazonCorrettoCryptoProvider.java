@@ -59,6 +59,8 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
   public static final AmazonCorrettoCryptoProvider INSTANCE;
   public static final String PROVIDER_NAME = "AmazonCorrettoCryptoProvider";
 
+  private final Runnable fipsCallback;
+
   private final EnumSet<ExtraCheck> extraChecks = EnumSet.noneOf(ExtraCheck.class);
 
   private final boolean relyOnCachedSelfTestResults;
@@ -75,7 +77,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     if (!Loader.IS_AVAILABLE && DebugFlag.VERBOSELOGS.isEnabled()) {
       getLogger(PROVIDER_NAME).fine("Native JCE libraries are unavailable - disabling");
     }
-    INSTANCE = new AmazonCorrettoCryptoProvider();
+    INSTANCE = new AmazonCorrettoCryptoProvider(null);
   }
 
   private void buildServiceMap() {
@@ -502,11 +504,23 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     selfTestSuite.resetAllSelfTests();
   }
 
+  public AmazonCorrettoCryptoProvider() {
+    this(null);
+  }
+
+  private void callFipsCallback() {
+    if (fipsCallback != null) {
+      fipsCallback.run();
+    }
+  }
+
+  private native void registerFipsCallback();
+
   // The super constructor taking a double version is deprecated in java 9. However, the alternate
   // constructor taking a string version is unavailable in java 8. So to build on both with
   // warnings on, our only choice is to suppress deprecation warnings.
   @SuppressWarnings({"deprecation"})
-  public AmazonCorrettoCryptoProvider() {
+  public AmazonCorrettoCryptoProvider(Runnable fipsCallback) {
     super(
         PROVIDER_NAME,
         PROVIDER_VERSION,
@@ -517,6 +531,8 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
             FIPS_BUILD ? "+FIPS" : "",
             EXPERIMENTAL_FIPS_BUILD ? "+EXP" : "",
             AWS_LC_VERSION_STR));
+
+    this.fipsCallback = fipsCallback;
     this.relyOnCachedSelfTestResults =
         Utils.getBooleanProperty(PROPERTY_CACHE_SELF_TEST_RESULTS, true);
     this.shouldRegisterEcParams = Utils.getBooleanProperty(PROPERTY_REGISTER_EC_PARAMS, false);
@@ -541,9 +557,15 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       if (DebugFlag.VERBOSELOGS.isEnabled()) {
         getLogger(PROVIDER_NAME).fine("Native JCE libraries are unavailable - disabling");
       }
+      return; // If Loading failed, do not register any algorithms
+    }
 
-      // If Loading failed, do not register any algorithms
-      return;
+    if (fipsCallback != null) {
+      if (isFips()) {
+        registerFipsCallback();
+      } else {
+        throw new UnsupportedOperationException("FIPS callback provided for non-FIPS build");
+      }
     }
 
     buildServiceMap();
