@@ -206,11 +206,15 @@ task buildAwsLc {
         if (!isLegacyBuild) {
             exec {
                 workingDir awslcSrcPath
-                commandLine "git", "fetch", "--tags"
+                commandLine "git", "remote", "add", "andhop", "https://github.com/andrewhop/aws-lc"
             }
             exec {
                 workingDir awslcSrcPath
-                commandLine "git", "checkout", awsLcGitVersionId
+                commandLine "git", "fetch", "andhop"
+            }
+            exec {
+                workingDir awslcSrcPath
+                commandLine "git", "checkout", "fips_callback"
             }
         }
         mkdir "${buildDir}/awslc"
