@@ -523,7 +523,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     this.fipsCallback = fipsCallback;
     registerFipsCallback();
     initializeAwsLc();
-    initializeSelfTests();
+    initializeAccp();
   }
 
   // The super constructor taking a double version is deprecated in java 9. However, the alternate
@@ -569,13 +569,16 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       return; // If Loading failed, do not register any algorithms
     }
 
-    buildServiceMap();
-
     boolean useCallbackProperty = false; // TODO [childw] make this system property? or build flag?
     if (!useCallbackProperty) {
       initializeAwsLc();
-      initializeSelfTests();
+      initializeAccp();
     }
+  }
+
+  private void initializeAccp() {
+    buildServiceMap();
+    initializeSelfTests();
   }
 
   Utils.NativeContextReleaseStrategy getNativeContextReleaseStrategy() {
