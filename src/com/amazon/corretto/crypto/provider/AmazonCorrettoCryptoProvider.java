@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
@@ -59,7 +60,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
   public static final AmazonCorrettoCryptoProvider INSTANCE;
   public static final String PROVIDER_NAME = "AmazonCorrettoCryptoProvider";
 
-  private final Runnable fipsCallback;
+  private Consumer<String> fipsCallback;
 
   private final EnumSet<ExtraCheck> extraChecks = EnumSet.noneOf(ExtraCheck.class);
 
@@ -77,7 +78,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     if (!Loader.IS_AVAILABLE && DebugFlag.VERBOSELOGS.isEnabled()) {
       getLogger(PROVIDER_NAME).fine("Native JCE libraries are unavailable - disabling");
     }
-    INSTANCE = new AmazonCorrettoCryptoProvider(null);
+    INSTANCE = new AmazonCorrettoCryptoProvider();
   }
 
   private void buildServiceMap() {
@@ -504,23 +505,32 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     selfTestSuite.resetAllSelfTests();
   }
 
-  public AmazonCorrettoCryptoProvider() {
-    this(null);
-  }
-
-  private void callFipsCallback() {
+  private void callFipsCallback(String msg) {
     if (fipsCallback != null) {
-      fipsCallback.run();
+      fipsCallback.accept(msg);
     }
   }
 
   private native void registerFipsCallback();
 
+  private native void initializeAwsLc();
+
+  public void setFipsCallback(Consumer<String> fipsCallback) {
+    boolean useCallbackProperty = true; // TODO [childw] make this system property? or build flag?
+    if (!useCallbackProperty || !isFips()) {
+      throw new UnsupportedOperationException("FIPS callback provided for non-FIPS build");
+    }
+    this.fipsCallback = fipsCallback;
+    registerFipsCallback();
+    initializeAwsLc();
+    initializeSelfTests();
+  }
+
   // The super constructor taking a double version is deprecated in java 9. However, the alternate
   // constructor taking a string version is unavailable in java 8. So to build on both with
   // warnings on, our only choice is to suppress deprecation warnings.
   @SuppressWarnings({"deprecation"})
-  public AmazonCorrettoCryptoProvider(Runnable fipsCallback) {
+  public AmazonCorrettoCryptoProvider() {
     super(
         PROVIDER_NAME,
         PROVIDER_VERSION,
@@ -532,7 +542,6 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
             EXPERIMENTAL_FIPS_BUILD ? "+EXP" : "",
             AWS_LC_VERSION_STR));
 
-    this.fipsCallback = fipsCallback;
     this.relyOnCachedSelfTestResults =
         Utils.getBooleanProperty(PROPERTY_CACHE_SELF_TEST_RESULTS, true);
     this.shouldRegisterEcParams = Utils.getBooleanProperty(PROPERTY_REGISTER_EC_PARAMS, false);
@@ -560,16 +569,13 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       return; // If Loading failed, do not register any algorithms
     }
 
-    if (fipsCallback != null) {
-      if (isFips()) {
-        registerFipsCallback();
-      } else {
-        throw new UnsupportedOperationException("FIPS callback provided for non-FIPS build");
-      }
-    }
-
     buildServiceMap();
-    initializeSelfTests();
+
+    boolean useCallbackProperty = false; // TODO [childw] make this system property? or build flag?
+    if (!useCallbackProperty) {
+      initializeAwsLc();
+      initializeSelfTests();
+    }
   }
 
   Utils.NativeContextReleaseStrategy getNativeContextReleaseStrategy() {

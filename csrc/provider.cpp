@@ -17,11 +17,34 @@
 
 #define CLASSNOTFOUND_TYPE "java/lang/NoClassDefFoundError"
 
+std::function<void(char const*)> call_fips_callback = [](char const*) { };
+
+// To have this symbol exported, one needs to modify the final-link.version and the CMakeLists.txt
+extern "C" void AWS_LC_fips_failure_callback(char const* message);
+
+void AWS_LC_fips_failure_callback(char const* message)
+{
+    fprintf(stderr, "AWS_LC_fips_failure_callback invoked with message: '%s'\n", message);
+    call_fips_callback(message);
+}
+
 namespace AmazonCorrettoCryptoProvider {
 
-extern "C" JNIEXPORT void JNICALL Java_com_amazon_corretto_crypto_provider_(i JNIEnv*, jclass, jlong ctxPtr)
+extern "C" JNIEXPORT void JNICALL
+Java_com_amazon_corretto_crypto_provider_AmazonCorrettoCryptoProvider_registerFipsCallback(JNIEnv* env, jobject thisObj)
 {
-    EVP_CIPHER_CTX_free(reinterpret_cast<EVP_CIPHER_CTX*>(ctxPtr));
+    // scope in |env| pointer and a reference to |thisObj|
+    call_fips_callback = [env, &thisObj](char const* message) {
+        jclass thisClass = env->GetObjectClass(thisObj);
+        jmethodID mid = env->GetMethodID(thisClass, "callFipsCallback", "(S)V");
+        env->CallVoidMethod(thisObj, mid, message);
+    };
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_amazon_corretto_crypto_provider_AmazonCorrettoCryptoProvider_initializeAwsLc(
+    JNIEnv*, jobject)
+{
+    // TODO [childw] call AWS-LC's init() method here!
 }
 
 } // namespace

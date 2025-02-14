@@ -206,7 +206,7 @@ task buildAwsLc {
         if (!isLegacyBuild) {
             exec {
                 workingDir awslcSrcPath
-                commandLine "git", "remote", "add", "andhop", "https://github.com/andrewhop/aws-lc"
+                commandLine "git", "remote", "set-url", "andhop", "https://github.com/andrewhop/aws-lc"
             }
             exec {
                 workingDir awslcSrcPath
