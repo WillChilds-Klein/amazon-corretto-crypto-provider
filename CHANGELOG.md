@@ -10,6 +10,7 @@
 * [PR 422:](https://github.com/corretto/amazon-corretto-crypto-provider/pull/422) Support "pure" ML-DSA, Bump AWS-LC version to 1.43.0
 * [PR 423:](https://github.com/corretto/amazon-corretto-crypto-provider/pull/423) Support "External Mu" ML-DSA
 * [PR 424:](https://github.com/corretto/amazon-corretto-crypto-provider/pull/424) Use ACCP for ML-DSA in EvpKeyFactoryTest (for now)
+* [PR 434:](https://github.com/corretto/amazon-corretto-crypto-provider/pull/434) Encode ML-DSA priv key as seed, expose PublicUtils.expandMLDSAKey
 
 ## 2.4.1
 
