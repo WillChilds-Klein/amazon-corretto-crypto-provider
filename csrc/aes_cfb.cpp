@@ -22,17 +22,18 @@ bool own_ctx_;
 
 static bool output_clobbers_input(uint8_t const * input, int input_len, uint8_t const * output, int unprocessed_input)
 {
-  // Let's say we have 5 unprocessed bytes. The first 11 (16 - 5) bytes of input would produce 16 bytes of output.
-  // To avoid overwriting the input, output must be at least 11 bytes behind input.
-  int delta = (unprocessed_input == 0) || (unprocessed_input == AES_CFB_BLOCK_SIZE_IN_BYTES)
-    ? unprocessed_input
-    : (AES_CFB_BLOCK_SIZE_IN_BYTES - unprocessed_input);
-  if ((output + delta) <= input) {
+  // If input and output are the same, they definitely overlap
+  if (input == output) {
+    return true;
+  }
+  
+  // If the output starts after the input ends, then we're not clobbering anything.
+  if ((input + input_len) <= output) {
     return false;
   }
 
-  // If the output starts after the input ends, then we're not clobbering anything.
-  if ((input + input_len) <= output) {
+  // If the output ends before the input starts, then we're not clobbering anything.
+  if ((output + input_len) <= input) {
     return false;
   }
 
