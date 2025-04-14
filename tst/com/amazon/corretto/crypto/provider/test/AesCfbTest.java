@@ -502,9 +502,6 @@ public class AesCfbTest {
       inOutBuffer.flip();
       inOutBuffer.limit(inOutBuffer.capacity());
 
-      // Create a separate buffer for the ciphertext
-      final ByteBuffer cipherTextBuffer = ByteBuffer.allocate(accpCipher.getOutputSize(inputLen));
-      
       accpCipher.init(Cipher.ENCRYPT_MODE, aesKey, iv);
       
       // Make a duplicate of inOutBuffer to use as input
@@ -516,9 +513,6 @@ public class AesCfbTest {
           multiStepByteBufferInPlace(accpCipher, processingPattern, inputBuffer);
       assertTrue(byteBuffersAreEqual(sunCipherText, cipherText));
 
-      // Create a separate buffer for the plaintext
-      final ByteBuffer plainTextBuffer = ByteBuffer.allocate(accpCipher.getOutputSize(inputLen));
-      
       accpCipher.init(Cipher.DECRYPT_MODE, aesKey, iv);
       
       // Use the cipherText as input and plainTextBuffer as output

@@ -143,21 +143,21 @@ public class AesCfbKatTest {
             "2b7e151628aed2a6abf7158809cf4f3c", // key
             "000102030405060708090a0b0c0d0e0f", // iv
             "6bc1bee22e409f96e93d7e117393172a01", // plaintext (17 bytes)
-            "3b3fd92eb72dad20333449f8e83cfb4a5e", // ciphertext
+            "3b3fd92eb72dad20333449f8e83cfb4a67", // ciphertext
             "AES/CFB/PKCS5Padding" // transformation
           },
           {
             "8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b", // key
             "000102030405060708090a0b0c0d0e0f", // iv
             "6bc1bee22e409f96e93d7e117393172a0102", // plaintext (18 bytes)
-            "cdc80d6fddf18cab34c25909c99a4174f9f7", // ciphertext
+            "cdc80d6fddf18cab34c25909c99a4174c8e1", // ciphertext
             "AES/CFB/PKCS5Padding" // transformation
           },
           {
             "603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4", // key
             "000102030405060708090a0b0c0d0e0f", // iv
             "6bc1bee22e409f96e93d7e117393172a010203", // plaintext (19 bytes)
-            "dc7e84bfda79164b7ecd8486985d3860b1a3b4", // ciphertext
+            "dc7e84bfda79164b7ecd8486985d386096d064", // ciphertext
             "AES/CFB/PKCS5Padding" // transformation
           }
         });
