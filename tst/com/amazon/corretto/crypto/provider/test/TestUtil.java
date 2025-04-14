@@ -763,19 +763,22 @@ public class TestUtil {
   public static ByteBuffer multiStepByteBufferInPlace(
       final Cipher cipher, final List<Integer> process, final ByteBuffer input) throws Exception {
 
-    final ByteBuffer output = input.duplicate();
-    output.limit(output.capacity());
+    // Create a new output buffer with the same capacity as the input
+    final ByteBuffer output = ByteBuffer.allocate(cipher.getOutputSize(input.remaining()));
+
+    // Create a duplicate of the input buffer to avoid modifying the original
+    final ByteBuffer inputDup = input.duplicate();
 
     for (final Integer p : process) {
-      if (!input.hasRemaining()) break;
-      final int toBeProcessed = p > input.remaining() ? input.remaining() : p;
-      final ByteBuffer temp = input.duplicate();
-      temp.limit(input.position() + toBeProcessed);
+      if (!inputDup.hasRemaining()) break;
+      final int toBeProcessed = p > inputDup.remaining() ? inputDup.remaining() : p;
+      final ByteBuffer temp = inputDup.duplicate();
+      temp.limit(inputDup.position() + toBeProcessed);
       cipher.update(temp, output);
-      input.position(input.position() + toBeProcessed);
+      inputDup.position(inputDup.position() + toBeProcessed);
     }
 
-    cipher.doFinal(input, output);
+    cipher.doFinal(inputDup, output);
 
     output.flip();
 

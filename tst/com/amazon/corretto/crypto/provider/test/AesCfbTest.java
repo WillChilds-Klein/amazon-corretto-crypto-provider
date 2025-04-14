@@ -360,9 +360,9 @@ public class AesCfbTest {
 
     final Cipher accpCipher = accpAesCfbCipher(isPaddingEnabled);
     final Cipher sunCipher = sunAesCfbCipher(isPaddingEnabled);
-    final ByteBuffer input = genData(seed, inputLen, inputDirect);
+    ByteBuffer input = genData(seed, inputLen, inputDirect);
     if (inputReadOnly) {
-      input.asReadOnlyBuffer();
+      input = input.asReadOnlyBuffer();
     }
     final SecretKeySpec aesKey = genAesKey(seed, keySize);
     final IvParameterSpec iv = genIv(seed, 16);
@@ -421,9 +421,9 @@ public class AesCfbTest {
       throws Exception {
 
     final Cipher accpCipher = accpAesCfbCipher(isPaddingEnabled);
-    final ByteBuffer input = genData(seed, inputLen, inputDirect);
+    ByteBuffer input = genData(seed, inputLen, inputDirect);
     if (inputReadOnly) {
-      input.asReadOnlyBuffer();
+      input = input.asReadOnlyBuffer();
     }
     final SecretKeySpec aesKey = genAesKey(seed, keySize);
     final IvParameterSpec iv = genIv(seed, 16);
@@ -478,9 +478,9 @@ public class AesCfbTest {
       throws Exception {
 
     final Cipher accpCipher = accpAesCfbCipher(isPaddingEnabled);
-    final ByteBuffer input = genData(seed, inputLen, inputDirect);
+    ByteBuffer input = genData(seed, inputLen, inputDirect);
     if (inputReadOnly) {
-      input.asReadOnlyBuffer();
+      input = input.asReadOnlyBuffer();
     }
     final SecretKeySpec aesKey = genAesKey(seed, keySize);
     final IvParameterSpec iv = genIv(seed, 16);
@@ -495,20 +495,35 @@ public class AesCfbTest {
     final ByteBuffer sunCipherText = oneShotByteBuffer(sunCipher, input.duplicate());
 
     for (final List<Integer> processingPattern : processingPatterns) {
+      // Create a separate buffer for output to avoid in-place buffer issues
       final ByteBuffer inOutBuffer = genData(seed, accpCipher.getOutputSize(inputLen), inputDirect);
       inOutBuffer.limit(inputLen);
       inOutBuffer.put(input.duplicate());
       inOutBuffer.flip();
       inOutBuffer.limit(inOutBuffer.capacity());
 
+      // Create a separate buffer for the ciphertext
+      final ByteBuffer cipherTextBuffer = ByteBuffer.allocate(accpCipher.getOutputSize(inputLen));
+      
       accpCipher.init(Cipher.ENCRYPT_MODE, aesKey, iv);
+      
+      // Make a duplicate of inOutBuffer to use as input
+      ByteBuffer inputBuffer = inOutBuffer.duplicate();
+      inputBuffer.limit(inputLen);
+      
+      // Use the separate buffer for output
       final ByteBuffer cipherText =
-          multiStepByteBufferInPlace(accpCipher, processingPattern, inOutBuffer);
+          multiStepByteBufferInPlace(accpCipher, processingPattern, inputBuffer);
       assertTrue(byteBuffersAreEqual(sunCipherText, cipherText));
 
+      // Create a separate buffer for the plaintext
+      final ByteBuffer plainTextBuffer = ByteBuffer.allocate(accpCipher.getOutputSize(inputLen));
+      
       accpCipher.init(Cipher.DECRYPT_MODE, aesKey, iv);
+      
+      // Use the cipherText as input and plainTextBuffer as output
       final ByteBuffer plainText =
-          multiStepByteBufferInPlace(accpCipher, processingPattern, cipherText);
+          multiStepByteBufferInPlace(accpCipher, processingPattern, cipherText.duplicate());
       assertTrue(byteBuffersAreEqual(input, plainText));
     }
   }
