@@ -4,6 +4,7 @@ package com.amazon.corretto.crypto.provider;
 
 import static com.amazon.corretto.crypto.provider.AesCbcSpi.AES_CBC_ISO10126_PADDING_NAMES;
 import static com.amazon.corretto.crypto.provider.AesCbcSpi.AES_CBC_PKCS7_PADDING_NAMES;
+import static com.amazon.corretto.crypto.provider.AesCfbSpi.AES_CFB_PKCS7_PADDING_NAMES;
 import static com.amazon.corretto.crypto.provider.ConcatenationKdfSpi.CKDF_WITH_HMAC_SHA256;
 import static com.amazon.corretto.crypto.provider.ConcatenationKdfSpi.CKDF_WITH_HMAC_SHA512;
 import static com.amazon.corretto.crypto.provider.ConcatenationKdfSpi.CKDF_WITH_SHA256;
@@ -155,6 +156,16 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
         "AES_128/CBC",
         "AES_192/CBC",
         "AES_256/CBC");
+
+    addService(
+        "Cipher",
+        "AES/CFB",
+        "AesCfbSpi",
+        false,
+        singletonMap("SupportedModes", "CFB"),
+        "AES_128/CFB",
+        "AES_192/CFB",
+        "AES_256/CFB");
 
     addService("Cipher", "RSA/ECB/NoPadding", "RsaCipher$NoPadding");
     addService("Cipher", "RSA/ECB/Pkcs1Padding", "RsaCipher$Pkcs1");
@@ -437,6 +448,14 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       // Allow the padding scheme to be set later by defaulting to a no-padding Cipher.
       if (algo.toUpperCase().startsWith("AES/CBC")) {
         return new AesCbcSpi(AesCbcSpi.Padding.NONE, saveContext);
+      }
+
+      if (AES_CFB_PKCS7_PADDING_NAMES.contains(algo.toLowerCase())) {
+        return new AesCfbSpi(AesCfbSpi.Padding.PKCS7, saveContext);
+      }
+      // Allow the padding scheme to be set later by defaulting to a no-padding Cipher.
+      if (algo.toUpperCase().startsWith("AES/CFB")) {
+        return new AesCfbSpi(AesCfbSpi.Padding.NONE, saveContext);
       }
       throw new NoSuchAlgorithmException(format("No service class for Cipher/%s", algo));
     }
