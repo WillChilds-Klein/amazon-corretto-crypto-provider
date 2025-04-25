@@ -246,9 +246,7 @@ public class AesCfbTest {
 
     assertThrows(
         InvalidKeyException.class, 
-        () -> {
-          Utils.checkAesKey(keySpec);
-        });
+        () -> cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec));
   }
 
   @Test
@@ -276,10 +274,7 @@ public class AesCfbTest {
   public void testInvalidPadding() throws Exception {
     assertThrows(
         NoSuchPaddingException.class,
-        () -> {
-          Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
-          cipher.engineSetPadding("PKCS5Padding");
-        });
+        () -> Cipher.getInstance("AES/CFB/PKCS5Padding", PROVIDER_NAME));
   }
 
   @Test
