@@ -246,7 +246,7 @@ public class AesCfbTest {
 
     try {
       cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-      fail("Expected InvalidKeyException");
+      org.junit.jupiter.api.Assertions.fail("Expected InvalidKeyException");
     } catch (InvalidKeyException e) {
       // Expected
     }
@@ -277,7 +277,7 @@ public class AesCfbTest {
   public void testInvalidPadding() throws Exception {
     try {
       Cipher.getInstance("AES/CFB/PKCS5Padding", PROVIDER_NAME);
-      fail("Expected NoSuchPaddingException");
+      org.junit.jupiter.api.Assertions.fail("Expected NoSuchPaddingException");
     } catch (NoSuchPaddingException e) {
       // Expected
     }
