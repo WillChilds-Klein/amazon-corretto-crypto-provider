@@ -28,3 +28,6 @@ addService("Cipher", "AES_256/CFB/NoPadding", "AesCfbSpi", false);
 ```
 
 Updated `CMakeLists.txt` to include the new `aes_cfb.cpp` file in the build.
+
+## Step 6: Fix service instantiation
+Updated `getCipherSpiInstance` method in `AmazonCorrettoCryptoProvider.java` to handle AES CFB cipher instantiation. The method was missing a case to check for AES/CFB/NoPadding algorithms, which was causing the tests to fail with "No service class for Cipher/AES/CFB/NoPadding" errors.
