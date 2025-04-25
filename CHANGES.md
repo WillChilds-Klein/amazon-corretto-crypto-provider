@@ -1,0 +1,20 @@
+# Implementation of AES CFB Mode
+
+## Step 1: Created the C++ implementation file
+Created `csrc/aes_cfb.cpp` with the necessary JNI functions to support AES CFB mode. The implementation follows the pattern of other AES block cipher modes in the codebase, particularly AES CBC. The implementation uses AWS-LC's EVP_CIPHER API with the EVP_aes_128_cfb128() and EVP_aes_256_cfb128() ciphers.
+
+## Step 2: Created the Java SPI implementation
+Created `src/com/amazon/corretto/crypto/provider/AesCfbSpi.java` which implements the CipherSpi interface for AES CFB mode. The implementation is based on the AesCbcSpi class but simplified since CFB mode doesn't require padding.
+
+## Step 3: Created unit tests
+Created `tst/com/amazon/corretto/crypto/provider/test/AesCfbTest.java` with comprehensive tests for the AES CFB implementation, including:
+- Basic encryption/decryption
+- Empty input handling
+- Multi-part encryption/decryption
+- ByteBuffer and DirectByteBuffer support
+- Invalid key/IV size handling
+- Compatibility with SunJCE provider
+- NIST SP 800-38A test vectors for both AES-128-CFB and AES-256-CFB
+
+## Step 4: Added benchmark
+Created `benchmarks/src/main/java/com/amazon/corretto/crypto/benchmarks/AesCfbOneShot.java` to benchmark the performance of AES CFB mode compared to SunJCE's implementation, with various key sizes and data sizes.
