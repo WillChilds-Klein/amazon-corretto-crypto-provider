@@ -244,12 +244,11 @@ public class AesCfbTest {
 
     final Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
 
-    try {
-      cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-      org.junit.jupiter.api.Assertions.fail("Expected InvalidKeyException");
-    } catch (InvalidKeyException e) {
-      // Expected
-    }
+    assertThrows(
+        InvalidKeyException.class, 
+        () -> {
+          Utils.checkAesKey(keySpec);
+        });
   }
 
   @Test
@@ -275,12 +274,12 @@ public class AesCfbTest {
 
   @Test
   public void testInvalidPadding() throws Exception {
-    try {
-      Cipher.getInstance("AES/CFB/PKCS5Padding", PROVIDER_NAME);
-      org.junit.jupiter.api.Assertions.fail("Expected NoSuchPaddingException");
-    } catch (NoSuchPaddingException e) {
-      // Expected
-    }
+    assertThrows(
+        NoSuchPaddingException.class,
+        () -> {
+          Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
+          cipher.engineSetPadding("PKCS5Padding");
+        });
   }
 
   @Test
