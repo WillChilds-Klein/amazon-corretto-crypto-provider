@@ -18,3 +18,13 @@ Created `tst/com/amazon/corretto/crypto/provider/test/AesCfbTest.java` with comp
 
 ## Step 4: Added benchmark
 Created `benchmarks/src/main/java/com/amazon/corretto/crypto/benchmarks/AesCfbOneShot.java` to benchmark the performance of AES CFB mode compared to SunJCE's implementation, with various key sizes and data sizes.
+
+## Step 5: Register services and update build files
+Updated `AmazonCorrettoCryptoProvider.java` to register the new AES CFB cipher services:
+```java
+addService("Cipher", "AES/CFB/NoPadding", "AesCfbSpi", false);
+addService("Cipher", "AES_128/CFB/NoPadding", "AesCfbSpi", false);
+addService("Cipher", "AES_256/CFB/NoPadding", "AesCfbSpi", false);
+```
+
+Updated `CMakeLists.txt` to include the new `aes_cfb.cpp` file in the build.
