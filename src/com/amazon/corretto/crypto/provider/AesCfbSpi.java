@@ -29,6 +29,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 class AesCfbSpi extends CipherSpi {
   public static final Set<String> AES_CFB_NO_PADDING_NAMES;
+  public static final Set<String> AES_CFB_PKCS5_PADDING_NAMES;
 
   static {
     Loader.load();
@@ -39,6 +40,14 @@ class AesCfbSpi extends CipherSpi {
                     "AES/CFB/NoPadding".toLowerCase(),
                     "AES_128/CFB/NoPadding".toLowerCase(),
                     "AES_256/CFB/NoPadding".toLowerCase())));
+    
+    AES_CFB_PKCS5_PADDING_NAMES =
+        Collections.unmodifiableSet(
+            new HashSet<>(
+                Arrays.asList(
+                    "AES/CFB/PKCS5Padding".toLowerCase(),
+                    "AES_128/CFB/PKCS5Padding".toLowerCase(),
+                    "AES_256/CFB/PKCS5Padding".toLowerCase())));
   }
 
   private static final byte[] EMPTY_ARRAY = new byte[0];
@@ -181,6 +190,11 @@ class AesCfbSpi extends CipherSpi {
     final int opMode = checkOperation(opmode);
     final byte[] iv = checkAesCfbIv(params);
     final byte[] keyBytes = checkAesKey(key);
+    
+    // Check for valid key sizes (only 128 and 256 bits are supported)
+    if (keyBytes.length != 16 && keyBytes.length != 32) {
+      throw new InvalidKeyException("Invalid AES key size: " + (keyBytes.length * 8) + " bits");
+    }
 
     // All checks passes, so we update the state:
     this.cipherState = CipherState.INITIALIZED;
@@ -421,8 +435,7 @@ class AesCfbSpi extends CipherSpi {
     return result;
   }
 
-  private void finalChecks(final int inputLen, final int outputLen)
-      throws ShortBufferException {
+  private void finalChecks(final int inputLen, final int outputLen) throws ShortBufferException {
     finalOrUpdateStateCheck();
     if (outputLen < getOutputSizeFinal(inputLen)) {
       throw new ShortBufferException(outputLen + "<" + getOutputSizeFinal(inputLen));

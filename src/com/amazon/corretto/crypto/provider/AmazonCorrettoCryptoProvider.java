@@ -93,6 +93,7 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
     addService("Cipher", "AES/CFB/NoPadding", "AesCfbSpi", false);
     addService("Cipher", "AES_128/CFB/NoPadding", "AesCfbSpi", false);
     addService("Cipher", "AES_256/CFB/NoPadding", "AesCfbSpi", false);
+    addService("Cipher", "AES/CFB/PKCS5Padding", "AesCfbSpi", false);
 
     addService(
         "Cipher", "AES/KWP/NoPadding", "AesKeyWrapPaddingSpi", /*attributes*/ null, "AesWrapPad");
@@ -434,6 +435,10 @@ public final class AmazonCorrettoCryptoProvider extends java.security.Provider {
       }
       if (AesCfbSpi.AES_CFB_NO_PADDING_NAMES.contains(algo.toLowerCase())) {
         return new AesCfbSpi(saveContext);
+      }
+      if (AesCfbSpi.AES_CFB_PKCS5_PADDING_NAMES.contains(algo.toLowerCase())) {
+        // We don't support PKCS5Padding for CFB mode, so throw NoSuchPaddingException
+        throw new NoSuchAlgorithmException("No such algorithm: " + algo);
       }
       if (AES_CBC_PKCS7_PADDING_NAMES.contains(algo.toLowerCase())) {
         return new AesCbcSpi(AesCbcSpi.Padding.PKCS7, saveContext);

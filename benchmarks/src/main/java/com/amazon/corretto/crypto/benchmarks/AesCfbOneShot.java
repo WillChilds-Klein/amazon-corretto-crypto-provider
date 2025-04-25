@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazon.corretto.crypto.benchmarks;
 
+import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 import javax.crypto.Cipher;
@@ -20,11 +21,11 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Warmup(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, jvmArgsAppend = {"-XX:+AlwaysPreTouch", "-Xms4g", "-Xmx4g"})
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@Warmup(iterations = 3, time = 5)
+@Measurement(iterations = 5, time = 5)
+@Fork(value = 1)
 @State(Scope.Benchmark)
 public class AesCfbOneShot {
   private static final SecureRandom RND = new SecureRandom();
@@ -32,21 +33,22 @@ public class AesCfbOneShot {
   @Param({"128", "256"})
   private int keySize;
 
-  @Param({"1024", "4096", "16384", "65536"})
+  @Param({"1024", "4096", "16384"})
   private int dataSize;
-
-  @Param({"SunJCE", "AmazonCorrettoCryptoProvider"})
-  private String provider;
 
   private byte[] key;
   private byte[] iv;
   private byte[] plaintext;
   private byte[] ciphertext;
+  private SecretKeySpec keySpec;
+  private IvParameterSpec ivSpec;
   private Cipher encryptCipher;
   private Cipher decryptCipher;
 
   @Setup(Level.Trial)
   public void setupTrial() throws Exception {
+    AmazonCorrettoCryptoProvider.install();
+
     key = new byte[keySize / 8];
     iv = new byte[16]; // AES block size
     plaintext = new byte[dataSize];
@@ -54,24 +56,26 @@ public class AesCfbOneShot {
     RND.nextBytes(iv);
     RND.nextBytes(plaintext);
 
-    SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
-    IvParameterSpec ivSpec = new IvParameterSpec(iv);
+    keySpec = new SecretKeySpec(key, "AES");
+    ivSpec = new IvParameterSpec(iv);
 
-    encryptCipher = Cipher.getInstance("AES/CFB/NoPadding", provider);
+    encryptCipher = Cipher.getInstance("AES/CFB/NoPadding", AmazonCorrettoCryptoProvider.PROVIDER_NAME);
     encryptCipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
     ciphertext = encryptCipher.doFinal(plaintext);
 
-    decryptCipher = Cipher.getInstance("AES/CFB/NoPadding", provider);
+    decryptCipher = Cipher.getInstance("AES/CFB/NoPadding", AmazonCorrettoCryptoProvider.PROVIDER_NAME);
     decryptCipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
   }
 
   @Benchmark
   public byte[] encrypt() throws Exception {
+    encryptCipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
     return encryptCipher.doFinal(plaintext);
   }
 
   @Benchmark
   public byte[] decrypt() throws Exception {
+    decryptCipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
     return decryptCipher.doFinal(ciphertext);
   }
 }
