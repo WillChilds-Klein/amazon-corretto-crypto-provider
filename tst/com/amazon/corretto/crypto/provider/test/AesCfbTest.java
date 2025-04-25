@@ -245,8 +245,7 @@ public class AesCfbTest {
     final Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
 
     assertThrows(
-        InvalidKeyException.class, 
-        () -> cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec));
+        InvalidKeyException.class, () -> cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec));
   }
 
   @Test

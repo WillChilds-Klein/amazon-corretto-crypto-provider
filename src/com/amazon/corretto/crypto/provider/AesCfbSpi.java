@@ -40,7 +40,7 @@ class AesCfbSpi extends CipherSpi {
                     "AES/CFB/NoPadding".toLowerCase(),
                     "AES_128/CFB/NoPadding".toLowerCase(),
                     "AES_256/CFB/NoPadding".toLowerCase())));
-    
+
     AES_CFB_PKCS5_PADDING_NAMES =
         Collections.unmodifiableSet(
             new HashSet<>(
@@ -190,7 +190,7 @@ class AesCfbSpi extends CipherSpi {
     final int opMode = checkOperation(opmode);
     final byte[] iv = checkAesCfbIv(params);
     final byte[] keyBytes = checkAesKey(key);
-    
+
     // Check for valid key sizes (only 128 and 256 bits are supported)
     if (keyBytes.length != 16 && keyBytes.length != 32) {
       throw new InvalidKeyException("Invalid AES key size: " + (keyBytes.length * 8) + " bits");

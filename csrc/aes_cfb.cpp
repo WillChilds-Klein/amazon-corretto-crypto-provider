@@ -170,8 +170,8 @@ extern "C" JNIEXPORT jint JNICALL Java_com_amazon_corretto_crypto_provider_AesCf
 
         // update
         JIOBlobs io_blobs(env, inputDirect, inputArray, outputDirect, outputArray);
-        int result = aes_cfb_cipher.update(io_blobs.get_input() + inputOffset,
-            inputLen, io_blobs.get_output() + outputOffset, 0);
+        int result = aes_cfb_cipher.update(
+            io_blobs.get_input() + inputOffset, inputLen, io_blobs.get_output() + outputOffset, 0);
 
         // final
         result += aes_cfb_cipher.do_final(io_blobs.get_output() + outputOffset + result);
@@ -212,7 +212,8 @@ extern "C" JNIEXPORT jint JNICALL Java_com_amazon_corretto_crypto_provider_AesCf
         // update
         JIOBlobs io_blobs(env, inputDirect, inputArray, outputDirect, outputArray);
 
-        return aes_cfb_cipher.update(io_blobs.get_input() + inputOffset, inputLen, io_blobs.get_output() + outputOffset, 0);
+        return aes_cfb_cipher.update(
+            io_blobs.get_input() + inputOffset, inputLen, io_blobs.get_output() + outputOffset, 0);
 
     } catch (java_ex& ex) {
         ex.throw_to_java(env);
@@ -239,7 +240,8 @@ extern "C" JNIEXPORT jint JNICALL Java_com_amazon_corretto_crypto_provider_AesCf
         // update
         JIOBlobs io_blobs(env, inputDirect, inputArray, outputDirect, outputArray);
 
-        return aes_cfb_cipher.update(io_blobs.get_input() + inputOffset, inputLen, io_blobs.get_output() + outputOffset, unprocessedInput);
+        return aes_cfb_cipher.update(
+            io_blobs.get_input() + inputOffset, inputLen, io_blobs.get_output() + outputOffset, unprocessedInput);
 
     } catch (java_ex& ex) {
         ex.throw_to_java(env);
@@ -266,8 +268,8 @@ extern "C" JNIEXPORT jint JNICALL Java_com_amazon_corretto_crypto_provider_AesCf
 
         // update
         JIOBlobs io_blobs(env, inputDirect, inputArray, outputDirect, outputArray);
-        int result = aes_cfb_cipher.update(io_blobs.get_input() + inputOffset,
-            inputLen, io_blobs.get_output() + outputOffset, unprocessedInput);
+        int result = aes_cfb_cipher.update(
+            io_blobs.get_input() + inputOffset, inputLen, io_blobs.get_output() + outputOffset, unprocessedInput);
 
         // final
         result += aes_cfb_cipher.do_final(io_blobs.get_output() + outputOffset + result);
