@@ -4,13 +4,9 @@ package com.amazon.corretto.crypto.provider.test;
 
 import static com.amazon.corretto.crypto.provider.test.TestUtil.assertArraysHexEquals;
 import static com.amazon.corretto.crypto.provider.test.TestUtil.assertThrows;
-import static com.amazon.corretto.crypto.provider.test.TestUtil.sneakyInvoke;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import java.io.ByteArrayOutputStream;
@@ -20,23 +16,11 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.Security;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.function.BiFunction;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeAll;
@@ -193,14 +177,16 @@ public class AesCfbTest {
     encryptCipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
 
     final ByteBuffer plaintextBuf = ByteBuffer.wrap(plaintext);
-    final ByteBuffer ciphertextBuf = ByteBuffer.allocate(encryptCipher.getOutputSize(plaintext.length));
+    final ByteBuffer ciphertextBuf =
+        ByteBuffer.allocate(encryptCipher.getOutputSize(plaintext.length));
     encryptCipher.doFinal(plaintextBuf, ciphertextBuf);
     ciphertextBuf.flip();
 
     final Cipher decryptCipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
     decryptCipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
 
-    final ByteBuffer decryptedBuf = ByteBuffer.allocate(decryptCipher.getOutputSize(ciphertextBuf.remaining()));
+    final ByteBuffer decryptedBuf =
+        ByteBuffer.allocate(decryptCipher.getOutputSize(ciphertextBuf.remaining()));
     decryptCipher.doFinal(ciphertextBuf, decryptedBuf);
     decryptedBuf.flip();
 
@@ -226,15 +212,17 @@ public class AesCfbTest {
     final ByteBuffer plaintextBuf = ByteBuffer.allocateDirect(plaintext.length);
     plaintextBuf.put(plaintext);
     plaintextBuf.flip();
-    
-    final ByteBuffer ciphertextBuf = ByteBuffer.allocateDirect(encryptCipher.getOutputSize(plaintext.length));
+
+    final ByteBuffer ciphertextBuf =
+        ByteBuffer.allocateDirect(encryptCipher.getOutputSize(plaintext.length));
     encryptCipher.doFinal(plaintextBuf, ciphertextBuf);
     ciphertextBuf.flip();
 
     final Cipher decryptCipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
     decryptCipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
 
-    final ByteBuffer decryptedBuf = ByteBuffer.allocateDirect(decryptCipher.getOutputSize(ciphertextBuf.remaining()));
+    final ByteBuffer decryptedBuf =
+        ByteBuffer.allocateDirect(decryptCipher.getOutputSize(ciphertextBuf.remaining()));
     decryptCipher.doFinal(ciphertextBuf, decryptedBuf);
     decryptedBuf.flip();
 
@@ -249,14 +237,19 @@ public class AesCfbTest {
     final byte[] invalidKey = new byte[24]; // 192 bits, not supported
     RND.nextBytes(invalidKey);
     final SecretKeySpec keySpec = new SecretKeySpec(invalidKey, "AES");
-    
+
     final byte[] iv = new byte[BLOCK_SIZE];
     RND.nextBytes(iv);
     final IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
     final Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
-    
-    assertThrows(InvalidKeyException.class, () -> cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec));
+
+    try {
+      cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+      fail("Expected InvalidKeyException");
+    } catch (InvalidKeyException e) {
+      // Expected
+    }
   }
 
   @Test
@@ -267,18 +260,27 @@ public class AesCfbTest {
     final IvParameterSpec ivSpec = new IvParameterSpec(invalidIv);
 
     final Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
-    
-    assertThrows(InvalidAlgorithmParameterException.class, () -> cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec));
+
+    assertThrows(
+        InvalidAlgorithmParameterException.class,
+        () -> cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec));
   }
 
   @Test
   public void testInvalidMode() throws Exception {
-    assertThrows(NoSuchAlgorithmException.class, () -> Cipher.getInstance("AES/ECB/NoPadding", PROVIDER_NAME));
+    assertThrows(
+        NoSuchAlgorithmException.class,
+        () -> Cipher.getInstance("AES/ECB/NoPadding", PROVIDER_NAME));
   }
 
   @Test
   public void testInvalidPadding() throws Exception {
-    assertThrows(NoSuchPaddingException.class, () -> Cipher.getInstance("AES/CFB/PKCS5Padding", PROVIDER_NAME));
+    try {
+      Cipher.getInstance("AES/CFB/PKCS5Padding", PROVIDER_NAME);
+      fail("Expected NoSuchPaddingException");
+    } catch (NoSuchPaddingException e) {
+      // Expected
+    }
   }
 
   @Test
@@ -296,7 +298,7 @@ public class AesCfbTest {
 
     final Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
     cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
-    
+
     assertArrayEquals(iv, cipher.getIV());
   }
 
@@ -309,11 +311,11 @@ public class AesCfbTest {
 
     final Cipher cipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
     cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
-    
+
     final AlgorithmParameters params = cipher.getParameters();
     assertNotNull(params);
     assertEquals("AES", params.getAlgorithm());
-    
+
     final IvParameterSpec retrievedIvSpec = params.getParameterSpec(IvParameterSpec.class);
     assertArrayEquals(iv, retrievedIvSpec.getIV());
   }
@@ -332,7 +334,7 @@ public class AesCfbTest {
 
     final Cipher unwrapCipher = Cipher.getInstance(ALGORITHM, PROVIDER_NAME);
     unwrapCipher.init(Cipher.UNWRAP_MODE, wrappingKey, ivSpec);
-    final Key unwrapped = unwrapCipher.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+    final java.security.Key unwrapped = unwrapCipher.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
 
     assertArrayEquals(keyToWrap.getEncoded(), unwrapped.getEncoded());
   }
@@ -385,16 +387,18 @@ public class AesCfbTest {
     // Test vector from NIST SP 800-38A, F.3.13 CFB128-AES128.Encrypt
     final byte[] key = TestUtil.decodeHex("2b7e151628aed2a6abf7158809cf4f3c");
     final byte[] iv = TestUtil.decodeHex("000102030405060708090a0b0c0d0e0f");
-    final byte[] plaintext = TestUtil.decodeHex(
-        "6bc1bee22e409f96e93d7e117393172a" +
-        "ae2d8a571e03ac9c9eb76fac45af8e51" +
-        "30c81c46a35ce411e5fbc1191a0a52ef" +
-        "f69f2445df4f9b17ad2b417be66c3710");
-    final byte[] expectedCiphertext = TestUtil.decodeHex(
-        "3b3fd92eb72dad20333449f8e83cfb4a" +
-        "c8a64537a0b3a93fcde3cdad9f1ce58b" +
-        "26751f67a3cbb140b1808cf187a4f4df" +
-        "c04b05357c5d1c0eeac4c66f9ff7f2e6");
+    final byte[] plaintext =
+        TestUtil.decodeHex(
+            "6bc1bee22e409f96e93d7e117393172a"
+                + "ae2d8a571e03ac9c9eb76fac45af8e51"
+                + "30c81c46a35ce411e5fbc1191a0a52ef"
+                + "f69f2445df4f9b17ad2b417be66c3710");
+    final byte[] expectedCiphertext =
+        TestUtil.decodeHex(
+            "3b3fd92eb72dad20333449f8e83cfb4a"
+                + "c8a64537a0b3a93fcde3cdad9f1ce58b"
+                + "26751f67a3cbb140b1808cf187a4f4df"
+                + "c04b05357c5d1c0eeac4c66f9ff7f2e6");
 
     final SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
     final IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -415,20 +419,21 @@ public class AesCfbTest {
   @Test
   public void testNistKAT256() throws Exception {
     // Test vector from NIST SP 800-38A, F.3.15 CFB128-AES256.Encrypt
-    final byte[] key = TestUtil.decodeHex(
-        "603deb1015ca71be2b73aef0857d7781" +
-        "1f352c073b6108d72d9810a30914dff4");
+    final byte[] key =
+        TestUtil.decodeHex("603deb1015ca71be2b73aef0857d7781" + "1f352c073b6108d72d9810a30914dff4");
     final byte[] iv = TestUtil.decodeHex("000102030405060708090a0b0c0d0e0f");
-    final byte[] plaintext = TestUtil.decodeHex(
-        "6bc1bee22e409f96e93d7e117393172a" +
-        "ae2d8a571e03ac9c9eb76fac45af8e51" +
-        "30c81c46a35ce411e5fbc1191a0a52ef" +
-        "f69f2445df4f9b17ad2b417be66c3710");
-    final byte[] expectedCiphertext = TestUtil.decodeHex(
-        "dc7e84bfda79164b7ecd8486985d3860" +
-        "39ffed143b28b1c832113c6331e5407b" +
-        "df10132415e54b92a13ed0a8267ae2f9" +
-        "75a385741ab9cef82031623d55b1e471");
+    final byte[] plaintext =
+        TestUtil.decodeHex(
+            "6bc1bee22e409f96e93d7e117393172a"
+                + "ae2d8a571e03ac9c9eb76fac45af8e51"
+                + "30c81c46a35ce411e5fbc1191a0a52ef"
+                + "f69f2445df4f9b17ad2b417be66c3710");
+    final byte[] expectedCiphertext =
+        TestUtil.decodeHex(
+            "dc7e84bfda79164b7ecd8486985d3860"
+                + "39ffed143b28b1c832113c6331e5407b"
+                + "df10132415e54b92a13ed0a8267ae2f9"
+                + "75a385741ab9cef82031623d55b1e471");
 
     final SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
     final IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -446,7 +451,8 @@ public class AesCfbTest {
     assertArraysHexEquals(plaintext, decrypted);
   }
 
-  private SecretKey generateKey(int keySize) throws NoSuchAlgorithmException, NoSuchProviderException {
+  private SecretKey generateKey(int keySize)
+      throws NoSuchAlgorithmException, NoSuchProviderException {
     final KeyGenerator keyGen = KeyGenerator.getInstance("AES", PROVIDER_NAME);
     keyGen.init(keySize);
     return keyGen.generateKey();
