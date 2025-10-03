@@ -449,10 +449,14 @@ public class EvpSignatureTest {
   @MethodSource("params")
   public void verifyExtendedSignature(TestParams params) throws GeneralSecurityException {
     params.verifier.update(params.message);
-    final byte[] badSignature =
+    final byte[] extendedSignature =
         Arrays.copyOf(params.goodSignature, params.goodSignature.length + 1);
-    // Extended signatures always throw now.
-    assertThrows(SignatureException.class, () -> params.verifier.verify(badSignature));
+    // Extended RSA signatures are not valid, but should be considered "well-formed"
+    if (params.algorithm.contains("RSA")) {
+        assertFalse(params.verifier.verify(extendedSignature));
+    } else {
+        assertThrows(SignatureException.class, () -> params.verifier.verify(badSignature));
+    }
   }
 
   // Modification of body of the message only works

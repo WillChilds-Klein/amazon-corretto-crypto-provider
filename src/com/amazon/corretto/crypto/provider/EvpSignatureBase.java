@@ -448,9 +448,9 @@ abstract class EvpSignatureBase extends SignatureSpi {
     // Right now we only check RSA signatures to ensure they are the proper length
     if (key_ instanceof RSAKey) {
       final RSAKey rsaKey = (RSAKey) key_;
-      final int expectedLength = (rsaKey.getModulus().bitLength() + 7) / 8;
-      if (length != expectedLength) {
-        throw new SignatureException("RSA Signature of invalid length. Expected " + expectedLength);
+      final int minLength = (rsaKey.getModulus().bitLength() + 7) / 8;
+      if (length < minLength) {
+        throw new SignatureException("RSA Signature of invalid length. Need minimum of " + minLength);
       }
     }
   }
