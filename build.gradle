@@ -84,10 +84,11 @@ spotless {
   }
 
   // clang-format is difficult to configure across all of our platforms so we
-  // avoid being really strict about enforcing it in our build for now. version
-  // 17.x has a bug, so skip that version.
+  // avoid being really strict about enforcing it in our build for now. versions
+  // 17.x and 18.x have a bug, so skip those versions.
   def clangFormatVersion = getClangFormatVersion()
-  if (!clangFormatVersion.equals('') && clangFormatVersion.indexOf('17') < 0) {
+  if (!clangFormatVersion.equals('') && clangFormatVersion.indexOf('17') < 0
+                                     && clangFormatVersion.indexOf('18') < 0) {
     cpp {
         target 'csrc/*'
         licenseHeaderFile 'build-tools/license-headers/LicenseHeader.h'

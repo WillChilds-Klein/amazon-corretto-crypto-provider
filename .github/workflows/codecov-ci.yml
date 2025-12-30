@@ -1,0 +1,34 @@
+name: Code Coverage
+on:
+  pull_request:
+    branches:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+  codecov-ci-java:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up corretto 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Run Code Coverage Build
+        env:
+          TEST_JAVA_HOME: ${{ env.JAVA_HOME }}
+        run: |
+          ./tests/ci/run_accp_basic_tests.sh --lcov-ignore inconsistent
+          ./tests/ci/run_accp_test_integration.sh
+      - name: Upload Java coverage report to Codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
