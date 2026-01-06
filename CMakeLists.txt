@@ -277,6 +277,8 @@ else()
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:amazonCorrettoCryptoProvider> ${CMAKE_CURRENT_BINARY_DIR}/tmplib/com/amazon/corretto/crypto/provider/
         COMMAND ${Java_JAR_EXECUTABLE} uf ${ACCP_JAR_TMP} -C ${CMAKE_CURRENT_BINARY_DIR}/tmplib/ com/amazon/corretto/crypto/provider/
         COMMAND ${Java_JAR_EXECUTABLE} uf ${ACCP_JAR_TMP} -C ${CMAKE_CURRENT_BINARY_DIR}/generated-java/ com/amazon/corretto/crypto/provider/version.properties
+        # Add Enable-Native-Access manifest attribute to suppress JDK 25+ warnings about native library loading
+        COMMAND ${Java_JAR_EXECUTABLE} umf ${CMAKE_CURRENT_SOURCE_DIR}/etc/manifest-native-access.mf ${ACCP_JAR_TMP}
         COMMAND ${CMAKE_COMMAND} -E copy ${ACCP_JAR_TMP} ${ACCP_JAR}
         DEPENDS code-only-jar module-jar ${VERSION_PROPERTIES_FILE}
     )
